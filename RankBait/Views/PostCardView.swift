@@ -9,50 +9,80 @@ struct PostCardView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
-                // Header: Name and Date
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(post.friendName)
-                        .font(.system(.headline, design: .rounded))
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.primary)
+                HStack(spacing: 12) {
+                    ZStack {
+                        Circle()
+                            .fill(.ultraThinMaterial)
+                            .frame(width: 44, height: 44)
+                        
+                        Image(systemName: "person.circle.fill")
+                            .font(.title2)
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [.blue, .cyan],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                    }
                     
-                    Text(formatDate(post.createdAt))
-                        .font(.system(.caption2, design: .default))
-                        .foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(post.friendName)
+                            .font(.system(.headline, design: .rounded))
+                            .fontWeight(.bold)
+                            .foregroundStyle(.primary)
+                        
+                        Text(formatDate(post.createdAt))
+                            .font(.system(.caption2, design: .default))
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 
                 Spacer()
                 
-                // Score
-                HStack(spacing: 6) {
-                    Image(systemName: post.score >= 0 ? "chart.line.uptrend.xyaxis" : "chart.line.downtrend.xyaxis")
-                        .font(.caption2)
+                VStack(spacing: 2) {
+                    Image(systemName: post.score >= 0 ? "arrow.up.circle.fill" : "arrow.down.circle.fill")
+                        .font(.caption)
                         .fontWeight(.bold)
                     
                     Text("\(post.score)")
-                        .font(.system(.headline, design: .rounded))
-                        .fontWeight(.bold)
+                        .font(.system(.title3, design: .rounded))
+                        .fontWeight(.black)
                 }
-                .foregroundStyle(post.score >= 0 ? .green : .red)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
+                .foregroundStyle(
+                    post.score >= 0
+                        ? LinearGradient(colors: [.green, .mint], startPoint: .top, endPoint: .bottom)
+                        : LinearGradient(colors: [.red, .pink], startPoint: .top, endPoint: .bottom)
+                )
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
                 .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(post.score >= 0 ? Color.green.opacity(0.1) : Color.red.opacity(0.1))
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(.ultraThinMaterial)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14)
+                                .stroke(
+                                    post.score >= 0
+                                        ? LinearGradient(colors: [.green.opacity(0.3), .mint.opacity(0.3)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                                        : LinearGradient(colors: [.red.opacity(0.3), .pink.opacity(0.3)], startPoint: .topLeading, endPoint: .bottomTrailing),
+                                    lineWidth: 1
+                                )
+                        )
                 )
             }
             
-            Divider().opacity(0.2)
+            Divider()
+                .background(.ultraThinMaterial)
             
             // Content
             Text(post.content)
                 .font(.system(.body, design: .default))
-                .lineSpacing(1.5)
+                .lineSpacing(2)
                 .foregroundStyle(.primary)
                 .lineLimit(nil)
             
             // Voting
-            HStack(spacing: 10) {
+            HStack(spacing: 12) {
                 VoteButton(
                     icon: "arrow.up.circle.fill",
                     label: "\(post.upvotes)",
@@ -72,15 +102,21 @@ struct PostCardView: View {
                 Spacer()
             }
         }
-        .padding(18)
+        .padding(20)
         .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color(.systemBackground))
-                .shadow(color: .black.opacity(0.08), radius: 12, x:0, y: 4)
+            RoundedRectangle(cornerRadius: 20)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.12), radius: 16, x: 0, y: 8)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(.white.opacity(0.5), lineWidth: 1)
+                        .blur(radius: 0.5)
+                )
         )
-        .scaleEffect(isPressed ? 0.9 : 1.0)
+        .scaleEffect(isPressed ? 0.98 : 1.0)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isPressed)
         .onLongPressGesture(minimumDuration: 0.1, perform: {}, onPressingChanged: { pressing in
-            withAnimation(.easeInOut(duration: 0.15)) {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                 isPressed = pressing
             }
         })
@@ -105,36 +141,49 @@ struct VoteButton: View {
     
     var body: some View {
         Button(action: {
-            withAnimation(.easeInOut(duration: 0.2)) {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                 isPressed = true
             }
             
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                withAnimation(.easeInOut(duration: 0.2)) {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                     isPressed = false
                 }
             }
             
             action()
         }) {
-            HStack(spacing: 6) {
+            HStack(spacing: 8) {
                 Image(systemName: icon)
                     .font(.system(.body, design: .default))
-                    .fontWeight(.semibold)
+                    .fontWeight(.bold)
                 
                 Text(label)
                     .font(.system(.subheadline, design: .rounded))
-                    .fontWeight(.semibold)
+                    .fontWeight(.bold)
             }
             .foregroundStyle(.white)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
             .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(isUpvote ? Color.green : Color.red)
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(
+                        LinearGradient(
+                            colors: isUpvote
+                                ? [Color.green, Color.mint]
+                                : [Color.red, Color.pink],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
                     .opacity(isActive ? 1.0 : 0.5)
+                    .shadow(
+                        color: (isUpvote ? Color.green : Color.red).opacity(isActive ? 0.4 : 0.2),
+                        radius: isActive ? 8 : 4,
+                        y: 4
+                    )
             )
-            .scaleEffect(isPressed ? 0.9 : 1.0)
+            .scaleEffect(isPressed ? 0.92 : 1.0)
         }
     }
 }

@@ -4,15 +4,39 @@ struct ContentView: View {
     @State private var viewModel = PostViewModel()
     
     var body: some View {
+        TabView {
+            Tab("Posts", systemImage: "bubble.left.and.bubble.right.fill") {
+                postsTabContent
+            }
+            
+            Tab("Leaderboard", systemImage: "chart.bar.fill") {
+                LeaderboardView(posts: viewModel.posts)
+            }
+        }
+    }
+    
+    private var postsTabContent: some View {
         NavigationStack {
             ZStack {
-                LinearGradient(
-                    gradient: Gradient(colors: [
+                MeshGradient(
+                    width: 3,
+                    height: 3,
+                    points: [
+                        .init(0, 0), .init(0.5, 0), .init(1, 0),
+                        .init(0, 0.5), .init(0.5, 0.5), .init(1, 0.5),
+                        .init(0, 1), .init(0.5, 1), .init(1, 1)
+                    ],
+                    colors: [
                         Color(red: 0.97, green: 0.94, blue: 1.0),
-                        Color(red: 0.95, green: 0.98, blue: 1.0)
-                    ]),
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
+                        Color(red: 0.95, green: 0.98, blue: 1.0),
+                        Color(red: 0.98, green: 0.95, blue: 0.98),
+                        Color(red: 0.96, green: 0.93, blue: 1.0),
+                        Color(red: 0.95, green: 0.98, blue: 1.0),
+                        Color(red: 0.97, green: 0.96, blue: 0.99),
+                        Color(red: 0.98, green: 0.94, blue: 0.99),
+                        Color(red: 0.96, green: 0.98, blue: 1.0),
+                        Color(red: 0.97, green: 0.96, blue: 1.0)
+                    ]
                 )
                 .ignoresSafeArea()
                 
@@ -29,16 +53,28 @@ struct ContentView: View {
                     Button {
                         viewModel.showingAddPost = true
                     } label: {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 22))
-                            .foregroundStyle(.blue)
+                        ZStack {
+                            Circle()
+                                .fill(.ultraThinMaterial)
+                                .frame(width: 40, height: 40)
+                                .shadow(color: .blue.opacity(0.3), radius: 8, y: 4)
+                            
+                            Image(systemName: "plus")
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        colors: [.blue, .cyan],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                        }
                     }
                 }
             }
-            
             .sheet(isPresented: $viewModel.showingAddPost) {
                 AddPostView{ post in
-                    withAnimation(.easeInOut(duration: 0.3)) {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
                         viewModel.addPost(post)
                     }
                 }
@@ -48,9 +84,22 @@ struct ContentView: View {
     
     private var emptyStateView: some View {
         VStack(spacing: 32) {
-            Image(systemName: "bubble.left.and.bubble.right")
-                .font(.system(size: 56))
-                .foregroundStyle(.blue.opacity(0.3))
+            ZStack {
+                Circle()
+                    .fill(.ultraThinMaterial)
+                    .frame(width: 120, height: 120)
+                
+                Image(systemName: "bubble.left.and.bubble.right")
+                    .font(.system(size: 56))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [.blue, .purple],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+            }
+            .shadow(color: .black.opacity(0.1), radius: 20, y: 10)
             
             VStack(spacing: 12) {
                 Text("No Posts Yet")
@@ -58,7 +107,7 @@ struct ContentView: View {
                     .fontWeight(.bold)
                     .foregroundStyle(.primary)
                 
-                Text("Create the First Post")
+                Text("Tap the + button to create your first post")
                     .font(.system(.subheadline, design: .default))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -73,17 +122,17 @@ struct ContentView: View {
     
     private var postsListView: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            LazyVStack(spacing: 14) {
+            LazyVStack(spacing: 16) {
                 ForEach(viewModel.posts) { post in
                     PostCardView(
                         post: post,
                         onUpvote: {
-                            withAnimation(.easeInOut(duration: 0.2)) {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                                 viewModel.upVote(post)
                             }
                         },
                         onDownvote: {
-                            withAnimation(.easeInOut(duration: 0.2)) {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                                 viewModel.downVote(post)
                             }
                         }
@@ -91,14 +140,17 @@ struct ContentView: View {
                     .padding(.horizontal, 20)
                     .contextMenu {
                         Button(role: .destructive) {
-                            withAnimation(.easeInOut(duration: 0.2)) {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                                 viewModel.deletePost(post)
                             }
                         } label: {
                             Label("Delete", systemImage: "trash")
                         }
                     }
-                    .transition(.scale.combined(with: .opacity))
+                    .transition(.asymmetric(
+                        insertion: .scale.combined(with: .opacity),
+                        removal: .scale.combined(with: .opacity)
+                    ))
                 }
             }
             .padding(.vertical, 20)
