@@ -4,6 +4,7 @@ struct AddPostView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var friendName: String = ""
     @State private var content: String = ""
+    let currentGroupId: String
     let onAdd: (Post) -> Void
     
     var isValid: Bool {
@@ -14,7 +15,6 @@ struct AddPostView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // Enhanced gradient background
                 MeshGradient(
                     width: 3,
                     height: 3,
@@ -39,7 +39,6 @@ struct AddPostView: View {
                 
                 ScrollView {
                     VStack(spacing: 24) {
-                        // WHO Section
                         VStack(alignment: .leading, spacing: 12) {
                             HStack(spacing: 8) {
                                 Image(systemName: "person.2.fill")
@@ -98,7 +97,6 @@ struct AddPostView: View {
                             .padding(.horizontal, 20)
                         }
                         
-                        // WHAT Section
                         VStack(alignment: .leading, spacing: 12) {
                             HStack(spacing: 8) {
                                 Image(systemName: "text.bubble.fill")
@@ -192,6 +190,7 @@ struct AddPostView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
                         let newPost = Post(
+                            groupId: currentGroupId,
                             friendName: friendName.trimmingCharacters(in: .whitespaces),
                             content: content.trimmingCharacters(in: .whitespaces))
                         onAdd(newPost)
