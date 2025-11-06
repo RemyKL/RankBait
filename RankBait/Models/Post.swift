@@ -1,13 +1,15 @@
 import SwiftUI
+import FirebaseFirestore
 
 struct Post: Identifiable, Codable {
+    @DocumentID var documentId: String? // Firestore document ID
     let id: UUID
     var friendName: String
     var content: String
     var upvotes: Int
     var downvotes: Int
     var createdAt: Date
-    var userVote: String? // nil, up, or down
+    var userVote: String? // nil, "up", or "down"
     
     init(id: UUID = UUID(), friendName: String, content: String, upvotes: Int = 0, downvotes: Int = 0, createdAt: Date = Date(), userVote: String? = nil) {
         self.id = id
@@ -21,5 +23,15 @@ struct Post: Identifiable, Codable {
     
     var score: Int {
         upvotes - downvotes
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case friendName
+        case content
+        case upvotes
+        case downvotes
+        case createdAt
+        case userVote
     }
 }
