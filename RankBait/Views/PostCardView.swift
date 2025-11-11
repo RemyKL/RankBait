@@ -87,18 +87,18 @@ struct PostCardView: View {
                     icon: "arrow.up.circle.fill",
                     label: "\(post.upvotes)",
                     isUpvote: true,
-                    isActive: post.userVote == "up",
+                    isActive: post.currentDeviceVote() == "up",
                     action: onUpvote
                 )
-                
+
                 VoteButton(
                     icon: "arrow.down.circle.fill",
                     label: "\(post.downvotes)",
                     isUpvote: false,
-                    isActive: post.userVote == "down",
+                    isActive: post.currentDeviceVote() == "down",
                     action: onDownvote
                 )
-                
+
                 Spacer()
             }
         }

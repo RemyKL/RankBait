@@ -12,24 +12,25 @@ class FirebaseManager {
         db.settings = settings
     }
     
-    // MARK: - Create
+    // MARK: - Create Post
     func addPost(_ post: Post) async throws {
         let docRef = db.collection(postsCollection).document()
         
         let postData: [String: Any] = [
             "id": post.id.uuidString,
+            "groupId": post.groupId,
             "friendName": post.friendName,
             "content": post.content,
             "upvotes": post.upvotes,
             "downvotes": post.downvotes,
             "createdAt": Timestamp(date: post.createdAt),
-            "userVote": post.userVote as Any
+            "votes": post.votes
         ]
         
         try await docRef.setData(postData)
     }
     
-    // MARK: - Read
+    // MARK: - Read All Posts
     func fetchPosts() async throws -> [Post] {
         let snapshot = try await db.collection(postsCollection)
             .order(by: "createdAt", descending: true)
@@ -40,7 +41,7 @@ class FirebaseManager {
         }
     }
     
-    // MARK: - Update
+    // MARK: - Update Post
     func updatePost(_ post: Post) async throws {
         guard let docId = post.documentId else {
             print("Error: Post has no documentId")
@@ -50,13 +51,13 @@ class FirebaseManager {
         let postData: [String: Any] = [
             "upvotes": post.upvotes,
             "downvotes": post.downvotes,
-            "userVote": post.userVote as Any
+            "votes": post.votes
         ]
         
         try await db.collection(postsCollection).document(docId).updateData(postData)
     }
     
-    // MARK: - Delete
+    // MARK: - Delete Post
     func deletePost(_ post: Post) async throws {
         guard let docId = post.documentId else {
             print("Error: Post has no documentId")
@@ -65,9 +66,10 @@ class FirebaseManager {
         try await db.collection(postsCollection).document(docId).delete()
     }
     
-    // MARK: - Real-time Listener
-    func listenToPosts(completion: @escaping ([Post]) -> Void) -> ListenerRegistration {
+    // MARK: - Listen to Group Posts
+    func listenToGroupPosts(groupId: String, completion: @escaping ([Post]) -> Void) -> ListenerRegistration {
         return db.collection(postsCollection)
+            .whereField("groupId", isEqualTo: groupId)
             .order(by: "createdAt", descending: true)
             .addSnapshotListener { snapshot, error in
                 guard let documents = snapshot?.documents else {

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var viewModel = PostViewModel()
+    let currentGroup: Group
     
     var body: some View {
         TabView {
@@ -12,6 +13,9 @@ struct ContentView: View {
             Tab("Leaderboard", systemImage: "chart.bar.fill") {
                 LeaderboardView(posts: viewModel.posts)
             }
+        }
+        .onAppear {
+            viewModel.startListening(groupId: currentGroup.id)
         }
     }
     
@@ -46,7 +50,7 @@ struct ContentView: View {
                     postsListView
                 }
             }
-            .navigationTitle("RankBait")
+            .navigationTitle(currentGroup.name)
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
@@ -73,7 +77,7 @@ struct ContentView: View {
                 }
             }
             .sheet(isPresented: $viewModel.showingAddPost) {
-                AddPostView{ post in
+                AddPostView(currentGroupId: currentGroup.id) { post in
                     withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
                         viewModel.addPost(post)
                     }
@@ -159,5 +163,5 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView()
+    ContentView(currentGroup: Group(name: "Preview Group"))
 }

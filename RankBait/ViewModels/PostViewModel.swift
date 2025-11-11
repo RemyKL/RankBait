@@ -6,26 +6,32 @@ import FirebaseFirestore
 class PostViewModel {
     var posts: [Post] = []
     var showingAddPost: Bool = false
+    var currentGroupId: String? = nil
     private var listener: ListenerRegistration?
     
-    init() {
-        startListening()
-    }
+    init() {}
     
     deinit {
         listener?.remove()
         print("PostViewModel deinitialized, listener removed")
     }
     
-    // MARK: - Real-time Listener
-    private func startListening() {
-        listener = FirebaseManager.shared.listenToPosts { [weak self] posts in
+    // MARK: - Start Listening to Group Posts
+    func startListening(groupId: String) {
+        listener?.remove()
+        currentGroupId = groupId
+        listener = FirebaseManager.shared.listenToGroupPosts(groupId: groupId) { [weak self] posts in
             self?.posts = posts
         }
     }
     
-    // MARK: - Create
+    // MARK: - Create Post
     func addPost(_ post: Post) {
+        guard currentGroupId != nil else {
+            print("Error: No group selected")
+            return
+        }
+        
         Task {
             do {
                 try await FirebaseManager.shared.addPost(post)
@@ -52,20 +58,22 @@ class PostViewModel {
     func upVote(_ post: Post) {
         guard let index = posts.firstIndex(where: { $0.id == post.id }) else { return }
         
+        let deviceId = DeviceIdentifier.shared.deviceId
         var updatedPost = posts[index]
+        let currentVote = updatedPost.votes[deviceId]
         
-        if updatedPost.userVote == nil {
+        if currentVote == nil {
             updatedPost.upvotes += 1
-            updatedPost.userVote = "up"
+            updatedPost.votes[deviceId] = "up"
         }
-        else if updatedPost.userVote == "up" {
+        else if currentVote == "up" {
             updatedPost.upvotes -= 1
-            updatedPost.userVote = nil
+            updatedPost.votes.removeValue(forKey: deviceId)
         }
-        else if updatedPost.userVote == "down" {
+        else if currentVote == "down" {
             updatedPost.downvotes -= 1
             updatedPost.upvotes += 1
-            updatedPost.userVote = "up"
+            updatedPost.votes[deviceId] = "up"
         }
         
         posts[index] = updatedPost
@@ -90,20 +98,22 @@ class PostViewModel {
     func downVote(_ post: Post) {
         guard let index = posts.firstIndex(where: { $0.id == post.id }) else { return }
         
+        let deviceId = DeviceIdentifier.shared.deviceId
         var updatedPost = posts[index]
+        let currentVote = updatedPost.votes[deviceId]
         
-        if updatedPost.userVote == nil {
+        if currentVote == nil {
             updatedPost.downvotes += 1
-            updatedPost.userVote = "down"
+            updatedPost.votes[deviceId] = "down"
         }
-        else if updatedPost.userVote == "up" {
+        else if currentVote == "up" {
             updatedPost.upvotes -= 1
             updatedPost.downvotes += 1
-            updatedPost.userVote = "down"
+            updatedPost.votes[deviceId] = "down"
         }
-        else if updatedPost.userVote == "down" {
+        else if currentVote == "down" {
             updatedPost.downvotes -= 1
-            updatedPost.userVote = nil
+            updatedPost.votes.removeValue(forKey: deviceId)
         }
         
         posts[index] = updatedPost
