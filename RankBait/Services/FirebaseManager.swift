@@ -5,11 +5,9 @@ class FirebaseManager {
     static let shared = FirebaseManager()
     private let db = Firestore.firestore()
     private let postsCollection = "posts"
-    
+        
     private init() {
-        let settings = FirestoreSettings()
-        settings.cacheSettings = PersistentCacheSettings(sizeBytes: 100 * 1024 * 1024 as NSNumber)
-        db.settings = settings
+
     }
     
     // MARK: - Create Post

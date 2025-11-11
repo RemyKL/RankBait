@@ -33,6 +33,7 @@ struct Post: Identifiable, Codable {
     }
     
     enum CodingKeys: String, CodingKey {
+        case documentId
         case id
         case groupId
         case friendName
