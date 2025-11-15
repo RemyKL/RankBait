@@ -1,14 +1,60 @@
 import SwiftUI
 
+enum LeaderboardFilter: String, CaseIterable, Identifiable {
+    case netScore = "Net Score"
+    case mostUpvotes = "Upvotes"
+    case mostDownvotes = "Downvotes"
+    
+    var id: String { rawValue }
+    
+    var icon: String {
+        switch self {
+        case .netScore: return "equal.circle.fill"
+        case .mostUpvotes: return "arrow.up.circle.fill"
+        case .mostDownvotes: return "arrow.down.circle.fill"
+        }
+    }
+    
+    var gradient: LinearGradient {
+        switch self {
+        case .netScore:
+            return LinearGradient(colors: [.blue, .cyan], startPoint: .leading, endPoint: .trailing)
+        case .mostUpvotes:
+            return LinearGradient(colors: [.green, .mint], startPoint: .leading, endPoint: .trailing)
+        case .mostDownvotes:
+            return LinearGradient(colors: [.red, .pink], startPoint: .leading, endPoint: .trailing)
+        }
+    }
+}
+
 struct LeaderboardView: View {
     let posts: [Post]
+    @State private var selectedFilter: LeaderboardFilter = .netScore
     
-    private var leaderboardData: [(name: String, score: Int)] {
+    private var leaderboardData: [(name: String, value: Int)] {
         let grouped = Dictionary(grouping: posts, by: { $0.friendName })
-        return grouped.map { (name, posts) in
-            (name: name, score: posts.reduce(0) { $0 + $1.score })
+        
+        let mapped = grouped.map { (name, posts) -> (name: String, value: Int) in
+            let value: Int
+            switch selectedFilter {
+                case .netScore:
+                    value = posts.reduce(0) { $0 + $1.score }
+                case .mostUpvotes:
+                    value = posts.reduce(0) { $0 + $1.upvotes }
+                case .mostDownvotes:
+                    value = posts.reduce(0) { $0 + $1.downvotes }
+            }
+            return (name: name, value: value)
         }
-        .sorted { $0.score < $1.score }
+        
+        switch selectedFilter {
+            case .netScore:
+                return mapped.sorted { $0.value < $1.value }
+            case .mostUpvotes:
+                return mapped.sorted { $0.value > $1.value }
+            case .mostDownvotes:
+                return mapped.sorted { $0.value > $1.value }
+        }
     }
     
     var body: some View {
@@ -36,15 +82,39 @@ struct LeaderboardView: View {
                 )
                 .ignoresSafeArea()
                 
-                if leaderboardData.isEmpty {
-                    emptyStateView
-                } else {
-                    leaderboardListView
+                VStack(spacing: 0) {
+                    filterSelector
+                        .padding(.horizontal, 20)
+                        .padding(.top, 16)
+                        .padding(.bottom, 8)
+                    
+                    if leaderboardData.isEmpty {
+                        emptyStateView
+                    } else {
+                        leaderboardListView
+                    }
                 }
             }
             .navigationTitle("Leaderboard")
             .navigationBarTitleDisplayMode(.large)
         }
+    }
+    
+    private var filterSelector: some View {
+        HStack(spacing: 8) {
+            ForEach(LeaderboardFilter.allCases) { filter in
+                FilterButton(
+                    filter: filter,
+                    isSelected: selectedFilter == filter,
+                    onTap: {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            selectedFilter = filter
+                        }
+                    }
+                )
+            }
+        }
+        .padding(.vertical, 8)
     }
     
     private var emptyStateView: some View {
@@ -91,7 +161,8 @@ struct LeaderboardView: View {
                     LeaderboardRowView(
                         rank: index + 1,
                         name: entry.name,
-                        score: entry.score
+                        value: entry.value,
+                        filter: selectedFilter
                     )
                     .padding(.horizontal, 20)
                     .transition(.scale.combined(with: .opacity))
@@ -102,69 +173,131 @@ struct LeaderboardView: View {
     }
 }
 
+struct FilterButton: View {
+    let filter: LeaderboardFilter
+    let isSelected: Bool
+    let onTap: () -> Void
+    @State private var isPressed = false
+    
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 6) {
+                Image(systemName: filter.icon)
+                    .font(.caption)
+                    .fontWeight(.bold)
+                
+                Text(filter.rawValue)
+                    .font(.system(.caption, design: .rounded))
+                    .fontWeight(isSelected ? .bold : .semibold)
+            }
+            .foregroundStyle(isSelected ? .white : .primary)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(isSelected ? filter.gradient : LinearGradient(colors: [.clear], startPoint: .leading, endPoint: .trailing))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(isSelected ? .clear : .secondary.opacity(0.3), lineWidth: 1)
+                    )
+            )
+            .scaleEffect(isPressed ? 0.95 : 1.0)
+        }
+        .buttonStyle(PlainButtonStyle())
+        .onLongPressGesture(minimumDuration: 0.01, pressing: { pressing in
+            withAnimation(.spring(response: 0.2, dampingFraction: 0.6)) {
+                isPressed = pressing
+            }
+        }, perform: {})
+    }
+}
+
 struct LeaderboardRowView: View {
     let rank: Int
     let name: String
-    let score: Int
+    let value: Int
+    let filter: LeaderboardFilter
     @State private var isPressed: Bool = false
     
     private var rankIcon: String {
         switch rank {
-        case 1: return "trophy.fill"
-        case 2: return "medal.fill"
-        case 3: return "medal.fill"
-        default: return "number.circle.fill"
+            case 1: return "trophy.fill"
+            case 2: return "medal.fill"
+            case 3: return "medal.fill"
+            default: return "number.circle.fill"
         }
     }
     
     private var rankGradient: LinearGradient {
         switch rank {
-        case 1:
-            return LinearGradient(
-                colors: [Color(red: 1.0, green: 0.84, blue: 0.0), Color(red: 1.0, green: 0.65, blue: 0.0)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        case 2:
-            return LinearGradient(
-                colors: [Color(red: 0.75, green: 0.75, blue: 0.75), Color(red: 0.5, green: 0.5, blue: 0.5)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        case 3:
-            return LinearGradient(
-                colors: [Color(red: 0.8, green: 0.5, blue: 0.2), Color(red: 0.6, green: 0.4, blue: 0.2)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        default:
-            return LinearGradient(
-                colors: [.gray, .gray.opacity(0.7)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
+            case 1:
+                return LinearGradient(
+                    colors: [Color(red: 1.0, green: 0.84, blue: 0.0), Color(red: 1.0, green: 0.65, blue: 0.0)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            case 2:
+                return LinearGradient(
+                    colors: [Color(red: 0.75, green: 0.75, blue: 0.75), Color(red: 0.5, green: 0.5, blue: 0.5)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            case 3:
+                return LinearGradient(
+                    colors: [Color(red: 0.8, green: 0.5, blue: 0.2), Color(red: 0.6, green: 0.4, blue: 0.2)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            default:
+                return LinearGradient(
+                    colors: [.gray, .gray.opacity(0.7)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
         }
     }
     
-    private var scoreGradient: LinearGradient {
-          if score >= 0 {
-              return LinearGradient(
-                  colors: [.green, .mint],
-                  startPoint: .leading,
-                  endPoint: .trailing
-              )
-          } else {
-              return LinearGradient(
-                  colors: [.red, .pink],
-                  startPoint: .leading,
-                  endPoint: .trailing
-              )
-          }
-      }
-      
-      private var scoreIcon: String {
-          score >= 0 ? "arrow.up.circle.fill" : "arrow.down.circle.fill"
-      }
+    private var valueGradient: LinearGradient {
+        switch filter {
+            case .netScore:
+                return value >= 0
+                    ? LinearGradient(colors: [.green, .mint], startPoint: .leading, endPoint: .trailing)
+                    : LinearGradient(colors: [.red, .pink], startPoint: .leading, endPoint: .trailing)
+            case .mostUpvotes:
+                return LinearGradient(colors: [.green, .mint], startPoint: .leading, endPoint: .trailing)
+            case .mostDownvotes:
+                return LinearGradient(colors: [.red, .pink], startPoint: .leading, endPoint: .trailing)
+        }
+    }
+    
+    private var valueIcon: String {
+        switch filter {
+            case .netScore:
+                return value >= 0 ? "arrow.up.circle.fill" : "arrow.down.circle.fill"
+            case .mostUpvotes:
+                return "arrow.up.circle.fill"
+            case .mostDownvotes:
+                return "arrow.down.circle.fill"
+        }
+    }
+    
+    private var valueLabel: String {
+        switch filter {
+            case .netScore:
+                return "net score"
+            case .mostUpvotes:
+                return "upvotes"
+            case .mostDownvotes:
+                return "downvotes"
+        }
+    }
+    
+    private var displayValue: String {
+        if filter == .netScore && value >= 0 {
+            return "+\(value)"
+        }
+        return "\(value)"
+    }
     
     var body: some View {
         HStack(spacing: 18) {
@@ -186,7 +319,7 @@ struct LeaderboardRowView: View {
                     .fontWeight(.bold)
                     .foregroundStyle(.primary)
                 
-                Text("#\(rank) Idiot")
+                Text("Rank #\(rank)")
                     .font(.system(.caption, design: .rounded))
                     .foregroundStyle(.secondary)
             }
@@ -195,17 +328,17 @@ struct LeaderboardRowView: View {
             
             VStack(spacing: 4) {
                 HStack(spacing: 6) {
-                    Image(systemName: "arrow.down.circle.fill")
+                    Image(systemName: valueIcon)
                         .font(.title3)
                         .fontWeight(.bold)
                     
-                    Text(score >= 0 ? "+\(score)" : "\(score)")
+                    Text(displayValue)
                         .font(.system(.title2, design: .rounded))
                         .fontWeight(.black)
                 }
-                .foregroundStyle(scoreGradient)
+                .foregroundStyle(valueGradient)
                 
-                Text("Score")
+                Text(valueLabel)
                     .font(.system(.caption2, design: .rounded))
                     .foregroundStyle(.secondary)
             }
@@ -216,7 +349,8 @@ struct LeaderboardRowView: View {
                     .fill(.ultraThinMaterial)
                     .overlay(
                         RoundedRectangle(cornerRadius: 14)
-                            .stroke(scoreGradient.opacity(0.3),
+                            .stroke(
+                                valueGradient.opacity(0.3),
                                 lineWidth: 1
                             )
                     )
