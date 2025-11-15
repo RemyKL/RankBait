@@ -1,14 +1,10 @@
 import SwiftUI
 
 struct GroupSelectionView: View {
-    @State private var groups: [Group] = []
     @State private var selectedGroup: Group?
     @State private var showingCreateGroup = false
     @State private var showingJoinGroup = false
-    @State private var inviteCode = ""
     @State private var errorMessage: String?
-    
-    private let selectedGroupKey = "com.rankbait.selectedGroup"
     
     var body: some View {
         ZStack {
@@ -35,7 +31,7 @@ struct GroupSelectionView: View {
             .ignoresSafeArea()
             
             if let group = selectedGroup {
-                ContentView(currentGroup: group)
+                ContentView(currentGroup: $selectedGroup)
             } else {
                 groupSelectionContent
             }
@@ -147,7 +143,7 @@ struct GroupSelectionView: View {
     }
     
     private func loadSelectedGroup() {
-        if let groupId = UserDefaults.standard.string(forKey: selectedGroupKey) {
+        if let groupId = UserGroupsManager.shared.selectedGroupId {
             Task {
                 if let group = try? await GroupManager.shared.fetchGroup(byId: groupId) {
                     await MainActor.run {
@@ -159,7 +155,7 @@ struct GroupSelectionView: View {
     }
     
     private func selectGroup(_ group: Group) {
-        UserDefaults.standard.set(group.id, forKey: selectedGroupKey)
+        UserGroupsManager.shared.setSelectedGroup(group.id)
         selectedGroup = group
     }
 }

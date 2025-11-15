@@ -21,6 +21,7 @@ struct Group: Identifiable, Codable {
     }
     
     enum CodingKeys: String, CodingKey {
+        case documentId
         case id
         case name
         case createdAt

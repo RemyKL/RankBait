@@ -2,24 +2,45 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var viewModel = PostViewModel()
-    let currentGroup: Group
+    @Binding var currentGroup: Group?
+    @State private var showingSidebar = false
     
     var body: some View {
+        ZStack {
+            if let group = currentGroup {
+                contentForGroup(group)
+                    .sheet(isPresented: $showingSidebar) {
+                        GroupSidebarView(isPresented: $showingSidebar, selectedGroup: $currentGroup)
+                    }
+            } else {
+                Text("No Group Selected")
+                    .font(.title2)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+    
+    private func contentForGroup(_ group: Group) -> some View {
         TabView {
             Tab("Posts", systemImage: "bubble.left.and.bubble.right.fill") {
-                postsTabContent
+                postsTabContent(for: group)
             }
             
             Tab("Leaderboard", systemImage: "chart.bar.fill") {
                 LeaderboardView(posts: viewModel.posts)
             }
         }
+        .onChange(of: currentGroup?.id) { oldValue, newValue in
+            if let newGroupId = newValue {
+                viewModel.startListening(groupId: newGroupId)
+            }
+        }
         .onAppear {
-            viewModel.startListening(groupId: currentGroup.id)
+            viewModel.startListening(groupId: group.id)
         }
     }
     
-    private var postsTabContent: some View {
+    private func postsTabContent(for group: Group) -> some View {
         NavigationStack {
             ZStack {
                 MeshGradient(
@@ -50,9 +71,32 @@ struct ContentView: View {
                     postsListView
                 }
             }
-            .navigationTitle(currentGroup.name)
+            .navigationTitle(group.name)
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button {
+                        showingSidebar = true
+                    } label: {
+                        ZStack {
+                            Circle()
+                                .fill(.ultraThinMaterial)
+                                .frame(width: 40, height: 40)
+                                .shadow(color: .purple.opacity(0.3), radius: 8, y: 4)
+                            
+                            Image(systemName: "line.3.horizontal.circle.fill")
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        colors: [.purple, .pink],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                        }
+                    }
+                }
+                
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         viewModel.showingAddPost = true
@@ -77,7 +121,7 @@ struct ContentView: View {
                 }
             }
             .sheet(isPresented: $viewModel.showingAddPost) {
-                AddPostView(currentGroupId: currentGroup.id) { post in
+                AddPostView(currentGroupId: group.id) { post in
                     withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
                         viewModel.addPost(post)
                     }
@@ -111,7 +155,7 @@ struct ContentView: View {
                     .fontWeight(.bold)
                     .foregroundStyle(.primary)
                 
-                Text("Tap the + button to create your first post")
+                Text("Tap the + Button to Create Your First Post")
                     .font(.system(.subheadline, design: .default))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -163,5 +207,6 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView(currentGroup: Group(name: "Preview Group"))
+    @Previewable @State var group: Group? = Group(name: "Preview Group")
+    ContentView(currentGroup: $group)
 }
