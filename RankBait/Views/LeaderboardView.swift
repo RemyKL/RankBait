@@ -3,12 +3,12 @@ import SwiftUI
 struct LeaderboardView: View {
     let posts: [Post]
     
-    private var leaderboardData: [(name: String, downvotes: Int)] {
+    private var leaderboardData: [(name: String, score: Int)] {
         let grouped = Dictionary(grouping: posts, by: { $0.friendName })
         return grouped.map { (name, posts) in
-            (name: name, downvotes: posts.reduce(0) { $0 + $1.downvotes })
+            (name: name, score: posts.reduce(0) { $0 + $1.score })
         }
-        .sorted { $0.downvotes > $1.downvotes }
+        .sorted { $0.score < $1.score }
     }
     
     var body: some View {
@@ -72,7 +72,7 @@ struct LeaderboardView: View {
                     .fontWeight(.bold)
                     .foregroundStyle(.primary)
                 
-                Text("Create posts to see who's leading")
+                Text("Create Posts to See Who's Leading")
                     .font(.system(.subheadline, design: .default))
                     .foregroundStyle(.secondary)
             }
@@ -91,7 +91,7 @@ struct LeaderboardView: View {
                     LeaderboardRowView(
                         rank: index + 1,
                         name: entry.name,
-                        downvotes: entry.downvotes
+                        score: entry.score
                     )
                     .padding(.horizontal, 20)
                     .transition(.scale.combined(with: .opacity))
@@ -105,7 +105,7 @@ struct LeaderboardView: View {
 struct LeaderboardRowView: View {
     let rank: Int
     let name: String
-    let downvotes: Int
+    let score: Int
     @State private var isPressed: Bool = false
     
     private var rankIcon: String {
@@ -146,6 +146,26 @@ struct LeaderboardRowView: View {
         }
     }
     
+    private var scoreGradient: LinearGradient {
+          if score >= 0 {
+              return LinearGradient(
+                  colors: [.green, .mint],
+                  startPoint: .leading,
+                  endPoint: .trailing
+              )
+          } else {
+              return LinearGradient(
+                  colors: [.red, .pink],
+                  startPoint: .leading,
+                  endPoint: .trailing
+              )
+          }
+      }
+      
+      private var scoreIcon: String {
+          score >= 0 ? "arrow.up.circle.fill" : "arrow.down.circle.fill"
+      }
+    
     var body: some View {
         HStack(spacing: 18) {
             ZStack {
@@ -166,7 +186,7 @@ struct LeaderboardRowView: View {
                     .fontWeight(.bold)
                     .foregroundStyle(.primary)
                 
-                Text("Rank #\(rank)")
+                Text("#\(rank) Idiot")
                     .font(.system(.caption, design: .rounded))
                     .foregroundStyle(.secondary)
             }
@@ -179,19 +199,13 @@ struct LeaderboardRowView: View {
                         .font(.title3)
                         .fontWeight(.bold)
                     
-                    Text("\(downvotes)")
+                    Text(score >= 0 ? "+\(score)" : "\(score)")
                         .font(.system(.title2, design: .rounded))
                         .fontWeight(.black)
                 }
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [.red, .pink],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
+                .foregroundStyle(scoreGradient)
                 
-                Text("downvotes")
+                Text("Score")
                     .font(.system(.caption2, design: .rounded))
                     .foregroundStyle(.secondary)
             }
@@ -202,12 +216,7 @@ struct LeaderboardRowView: View {
                     .fill(.ultraThinMaterial)
                     .overlay(
                         RoundedRectangle(cornerRadius: 14)
-                            .stroke(
-                                LinearGradient(
-                                    colors: [.red.opacity(0.3), .pink.opacity(0.3)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
+                            .stroke(scoreGradient.opacity(0.3),
                                 lineWidth: 1
                             )
                     )
