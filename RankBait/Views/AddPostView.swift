@@ -205,26 +205,17 @@ struct AddPostView: View {
                                 .font(.system(.body, design: .rounded))
                                 .fontWeight(.bold)
                         }
-                        .foregroundStyle(.white)
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: isValid
+                                    ? [Color.blue, Color.cyan]
+                                    : [Color.gray.opacity(0.5), Color.gray.opacity(0.3)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)
-                        .background(
-                            RoundedRectangle(cornerRadius: 10)
-                                .fill(
-                                    LinearGradient(
-                                        colors: isValid
-                                            ? [Color.blue, Color.cyan]
-                                            : [Color.gray.opacity(0.5), Color.gray.opacity(0.3)],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
-                                )
-                                .shadow(
-                                    color: isValid ? Color.blue.opacity(0.4) : Color.clear,
-                                    radius: 8,
-                                    y: 4
-                                )
-                        )
                     }
                     .disabled(!isValid)
                     .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isValid)

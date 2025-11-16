@@ -79,10 +79,7 @@ struct ContentView: View {
                         showingSidebar = true
                     } label: {
                         ZStack {
-                            Circle()
-                                .fill(.ultraThinMaterial)
-                                .frame(width: 40, height: 40)
-                                .shadow(color: .purple.opacity(0.3), radius: 8, y: 4)
+                            
                             
                             Image(systemName: "line.3.horizontal.circle.fill")
                                 .font(.system(size: 18, weight: .bold))
@@ -102,10 +99,6 @@ struct ContentView: View {
                         viewModel.showingAddPost = true
                     } label: {
                         ZStack {
-                            Circle()
-                                .fill(.ultraThinMaterial)
-                                .frame(width: 40, height: 40)
-                                .shadow(color: .blue.opacity(0.3), radius: 8, y: 4)
                             
                             Image(systemName: "plus")
                                 .font(.system(size: 18, weight: .bold))
