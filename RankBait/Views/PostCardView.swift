@@ -187,3 +187,4 @@ struct VoteButton: View {
         }
     }
 }
+

@@ -29,6 +29,10 @@ struct ContentView: View {
             Tab("Leaderboard", systemImage: "chart.bar.fill") {
                 LeaderboardView(posts: viewModel.posts)
             }
+            Tab("Profile", systemImage: "person.fill") {
+                ProfileView()
+                
+            }
         }
         .onChange(of: currentGroup?.id) { oldValue, newValue in
             if let newGroupId = newValue {
