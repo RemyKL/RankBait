@@ -109,7 +109,7 @@ struct ProfileSettings : View {
             }.padding(16)
             Divider()
         }
-        .background(Color(red: 0.9, green: 0.9, blue: 0.9))
+        .background(Color(red: 235/255, green: 233/255, blue: 237/255))
         .cornerRadius(20)
         .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
         .padding(25)
@@ -121,8 +121,11 @@ struct ProfileSettingsRow: View {
     var icon : String
     var body: some View {
         HStack {
-            Image(systemName: icon).font(.system(size: 18)).padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 10)).foregroundStyle(Color(red: 0.1, green: 0.1, blue: 0.1))
-            Text(title).font(.title3).foregroundStyle(Color.black)
+            Image(systemName: icon)
+                .font(.system(size: 18))
+                .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 10))
+                .foregroundStyle(Color(red: 69/255, green: 68/255, blue: 70/255))
+            Text(title).font(.default).foregroundStyle(Color(red: 69/255, green: 68/255, blue: 70/255))
             Spacer()
             Image(systemName: "chevron.right")
                             .font(.system(size: 16))
