@@ -45,44 +45,56 @@ struct ProfileView: View {
 struct ProfileInfo: View {
     var body: some View {
         VStack {
-            ZStack {
+            ZStack (alignment: .bottom) {
                 Image(systemName: "person.crop.circle.fill").font(.system(size: 128)).foregroundStyle(
-                    LinearGradient(
-                        colors: [.blue, .purple],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
+//                    LinearGradient(
+//                        colors: [.blue, .purple],
+//                        startPoint: .topLeading,
+//                        endPoint: .bottomTrailing
+//                    )
+                    Color(red: 0.7, green: 0.7, blue: 0.8)
                 )
-                ZStack(alignment: .bottom) {
-//                    Circle()
-//                        .frame(width: 32, height: 32)
-//                        .fill(Color.white)
-//                    Button {
-//                        
-//                    } label : {
-//                        
-//                        Circle().frame(width: 30, height: 30)
-//                    }
-                }
+                
+                
+                    
+                Button {
+                    
+                } label : {
+                    ZStack() {
+                        Circle()
+                            .fill(Color.white)
+                            .frame(width: 38, height: 38)
+                        Circle().fill(
+                            LinearGradient(
+                                colors: [.blue, .purple],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        ).frame(width: 32, height: 32)
+                        Image(systemName: "pencil").foregroundStyle(Color.white).font(.system(size: 18))
+                    }
+                }.offset(x: 0, y: 5)
                
-            }
-            Text("Full Name").fontWeight(.bold).font(.title3)
+            }.padding(EdgeInsets(top: 0, leading: 0, bottom: 15, trailing: 0))
+            Text("Full Name").fontWeight(.bold).font(.title3).padding(2)
             Text("smaller text").foregroundStyle(.gray).font(.caption)
-            HStack {
+            HStack (spacing: 30) {
                 VStack (spacing: 5) {
                     Image(systemName: "crown.fill").foregroundStyle(Color.yellow)
                     Text("20").font(.title3).fontWeight(.bold)
-                    Text("Total Votes").font(.caption).foregroundStyle(Color.gray)
+                    Text("Votes").font(.caption).foregroundStyle(Color.gray)
                 }
+                Divider().frame(width: 1, height: 60);
                 VStack (spacing: 5) {
                     Image(systemName: "medal.fill").foregroundStyle(Color.gray)
                     Text("2").font(.title3).fontWeight(.bold)
-                    Text("Average Rank").font(.caption).foregroundStyle(Color.gray)
+                    Text("Rank").font(.caption).foregroundStyle(Color.gray)
                 }
+                Divider().frame(width: 1, height: 60);
                 VStack (spacing: 5) {
                     Image(systemName: "text.bubble.fill").foregroundStyle(Color.blue)
                     Text("5").font(.title3).fontWeight(.bold)
-                    Text("Total Posts").font(.caption).foregroundStyle(Color.gray)
+                    Text("Posts").font(.caption).foregroundStyle(Color.gray)
                 }
             }.padding(15)
         }
