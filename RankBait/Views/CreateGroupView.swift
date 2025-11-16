@@ -3,11 +3,13 @@ import SwiftUI
 struct CreateGroupView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var groupName = ""
+    @State private var username = ""
     @State private var isCreating = false
     let onCreate: (Group) -> Void
     
     var isValid: Bool {
-        !groupName.trimmingCharacters(in: .whitespaces).isEmpty
+        !groupName.trimmingCharacters(in: .whitespaces).isEmpty &&
+        !username.trimmingCharacters(in: .whitespaces).isEmpty
     }
     
     var body: some View {
@@ -43,17 +45,28 @@ struct CreateGroupView: View {
                             .font(.system(.title, design: .rounded))
                             .fontWeight(.bold)
                         
-                        Text("Choose a name for your group")
+                        Text("Enter Group Details")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
                     
-                    TextField("Group Name", text: $groupName)
-                        .font(.system(.body, design: .rounded))
-                        .padding()
-                        .background(.ultraThinMaterial)
-                        .cornerRadius(14)
-                        .padding(.horizontal, 40)
+                    VStack(spacing: 16) {
+                        TextField("Group Name", text: $groupName)
+                            .font(.system(.body, design: .rounded))
+                            .padding()
+                            .background(.ultraThinMaterial)
+                            .cornerRadius(14)
+                            .autocorrectionDisabled()
+                        
+                        TextField("Your Name", text: $username)
+                            .font(.system(.body, design: .rounded))
+                            .padding()
+                            .background(.ultraThinMaterial)
+                            .cornerRadius(14)
+                            .autocorrectionDisabled()
+                            .textInputAutocapitalization(.words)
+                    }
+                    .padding(.horizontal, 40)
                     
                     Spacer()
                 }
@@ -81,13 +94,26 @@ struct CreateGroupView: View {
                 }
             }
         }
+        .onAppear {
+            if let savedUsername = UserProfileManager.shared.username {
+                username = savedUsername
+            }
+        }
     }
     
     private func createGroup() {
         isCreating = true
         Task {
             do {
-                let group = try await GroupManager.shared.createGroup(name: groupName.trimmingCharacters(in: .whitespaces))
+                let trimmedUsername = username.trimmingCharacters(in: .whitespaces)
+                
+                UserProfileManager.shared.setUsername(trimmedUsername)
+                
+                let group = try await GroupManager.shared.createGroup(
+                    name: groupName.trimmingCharacters(in: .whitespaces),
+                    creatorUsername: trimmedUsername
+                )
+                
                 await MainActor.run {
                     onCreate(group)
                     dismiss()

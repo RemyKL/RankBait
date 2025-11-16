@@ -9,14 +9,15 @@ class GroupManager {
     private init() {}
     
     // MARK: - Create Group
-    func createGroup(name: String) async throws -> Group {
-        let group = Group(name: name)
+    func createGroup(name: String, creatorUsername: String) async throws -> Group {
+        let group = Group(name: name, members: [creatorUsername])
         
         let groupData: [String: Any] = [
             "id": group.id,
             "name": group.name,
             "createdAt": Timestamp(date: group.createdAt),
-            "inviteCode": group.inviteCode
+            "inviteCode": group.inviteCode,
+            "members": group.members
         ]
         
         try await db.collection(groupsCollection).document(group.id).setData(groupData)
@@ -54,5 +55,42 @@ class GroupManager {
                     completion(group)
                 }
             }
+    }
+    
+    // MARK: - Add Member to Group
+    func addMemberToGroup(groupId: String, username: String) async throws {
+        let groupRef = db.collection(groupsCollection).document(groupId)
+        
+        let snapshot = try await groupRef.getDocument()
+        guard var group = try? snapshot.data(as: Group.self) else {
+            throw NSError(domain: "GroupManager", code: 404, userInfo: [NSLocalizedDescriptionKey: "Group not found"])
+        }
+        
+        if !group.members.contains(username) {
+            group.members.append(username)
+            try await groupRef.updateData(["members": group.members])
+        }
+    }
+    
+    // MARK: - Remove Member from Group
+    func removeMemberFromGroup(groupId: String, username: String) async throws {
+        let groupRef = db.collection(groupsCollection).document(groupId)
+        
+        let snapshot = try await groupRef.getDocument()
+        guard var group = try? snapshot.data(as: Group.self) else {
+            throw NSError(domain: "GroupManager", code: 404, userInfo: [NSLocalizedDescriptionKey: "Group not found"])
+        }
+        
+        group.members.removeAll { $0 == username }
+        try await groupRef.updateData(["members": group.members])
+    }
+    
+    // MARK: - Get Members Array
+    func getMembers(for groupId: String) async throws -> [String] {
+        let snapshot = try await db.collection(groupsCollection).document(groupId).getDocument()
+        guard let group = try? snapshot.data(as: Group.self) else {
+            return []
+        }
+        return group.members.sorted()
     }
 }

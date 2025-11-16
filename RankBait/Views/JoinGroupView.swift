@@ -3,9 +3,16 @@ import SwiftUI
 struct JoinGroupView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var inviteCode = ""
+    @State private var username = ""
     @State private var isJoining = false
     @State private var errorMessage: String?
     let onJoin: (Group) -> Void
+    
+    var isValid: Bool {
+        !inviteCode.trimmingCharacters(in: .whitespaces).isEmpty &&
+        inviteCode.count == 6 &&
+        !username.trimmingCharacters(in: .whitespaces).isEmpty
+    }
     
     var body: some View {
         NavigationStack {
@@ -40,24 +47,35 @@ struct JoinGroupView: View {
                             .font(.system(.title, design: .rounded))
                             .fontWeight(.bold)
                         
-                        Text("Enter the 6-character invite code")
+                        Text("Enter the Invite Code and Your Name")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
                     }
                     
-                    TextField("ABC123", text: $inviteCode)
-                        .font(.system(.title2, design: .monospaced))
-                        .fontWeight(.bold)
-                        .multilineTextAlignment(.center)
-                        .textCase(.uppercase)
-                        .autocorrectionDisabled()
-                        .padding()
-                        .background(.ultraThinMaterial)
-                        .cornerRadius(14)
-                        .padding(.horizontal, 40)
-                        .onChange(of: inviteCode) { _, newValue in
-                            inviteCode = String(newValue.prefix(6).uppercased())
-                        }
+                    VStack(spacing: 16) {
+                        TextField("ABC123", text: $inviteCode)
+                            .font(.system(.title2, design: .monospaced))
+                            .fontWeight(.bold)
+                            .multilineTextAlignment(.center)
+                            .textCase(.uppercase)
+                            .autocorrectionDisabled()
+                            .padding()
+                            .background(.ultraThinMaterial)
+                            .cornerRadius(14)
+                            .onChange(of: inviteCode) { _, newValue in
+                                inviteCode = String(newValue.prefix(6).uppercased())
+                            }
+                        
+                        TextField("Your Name", text: $username)
+                            .font(.system(.body, design: .rounded))
+                            .padding()
+                            .background(.ultraThinMaterial)
+                            .cornerRadius(14)
+                            .autocorrectionDisabled()
+                            .textInputAutocapitalization(.words)
+                    }
+                    .padding(.horizontal, 40)
                     
                     if let error = errorMessage {
                         Text(error)
@@ -87,8 +105,13 @@ struct JoinGroupView: View {
                                 .fontWeight(.bold)
                         }
                     }
-                    .disabled(inviteCode.count != 6 || isJoining)
+                    .disabled(!isValid || isJoining)
                 }
+            }
+        }
+        .onAppear {
+            if let savedUsername = UserProfileManager.shared.username {
+                username = savedUsername
             }
         }
     }
@@ -100,6 +123,15 @@ struct JoinGroupView: View {
         Task {
             do {
                 if let group = try await GroupManager.shared.fetchGroup(byInviteCode: inviteCode) {
+                    let trimmedUsername = username.trimmingCharacters(in: .whitespaces)
+                    
+                    UserProfileManager.shared.setUsername(trimmedUsername)
+                    
+                    try await GroupManager.shared.addMemberToGroup(
+                        groupId: group.id,
+                        username: trimmedUsername
+                    )
+                    
                     await MainActor.run {
                         onJoin(group)
                         dismiss()

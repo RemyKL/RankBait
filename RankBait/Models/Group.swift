@@ -7,12 +7,14 @@ struct Group: Identifiable, Codable {
     var name: String
     var createdAt: Date
     var inviteCode: String
+    var members: [String]
     
-    init(id: String = UUID().uuidString, name: String, createdAt: Date = Date(), inviteCode: String = "") {
+    init(id: String = UUID().uuidString, name: String, createdAt: Date = Date(), inviteCode: String = "", members: [String] = []) {
         self.id = id
         self.name = name
         self.createdAt = createdAt
         self.inviteCode = inviteCode.isEmpty ? Group.generateInviteCode() : inviteCode
+        self.members = members
     }
     
     static func generateInviteCode() -> String {
@@ -26,5 +28,6 @@ struct Group: Identifiable, Codable {
         case name
         case createdAt
         case inviteCode
+        case members
     }
 }
