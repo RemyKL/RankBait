@@ -382,3 +382,8 @@ struct LeaderboardRowView: View {
         }
     }
 }
+
+
+#Preview {
+    LeaderboardView(posts: [])
+}
