@@ -31,31 +31,34 @@ struct LeaderboardView: View {
     let posts: [Post]
     @State private var selectedFilter: LeaderboardFilter = .netScore
     
-    private var leaderboardData: [(name: String, value: Int)] {
-        let grouped = Dictionary(grouping: posts, by: { $0.friendName })
-        
-        let mapped = grouped.map { (name, posts) -> (name: String, value: Int) in
-            let value: Int
-            switch selectedFilter {
-                case .netScore:
-                    value = posts.reduce(0) { $0 + $1.score }
-                case .mostUpvotes:
-                    value = posts.reduce(0) { $0 + $1.upvotes }
-                case .mostDownvotes:
-                    value = posts.reduce(0) { $0 + $1.downvotes }
-            }
-            return (name: name, value: value)
-        }
-        
-        switch selectedFilter {
-            case .netScore:
-                return mapped.sorted { $0.value < $1.value }
-            case .mostUpvotes:
-                return mapped.sorted { $0.value > $1.value }
-            case .mostDownvotes:
-                return mapped.sorted { $0.value > $1.value }
-        }
-    }
+    @State private var leaderboardData: [(name: String, value: Int)] = []
+    @State private var isLoading = false
+//    {
+//        let grouped = Dictionary(grouping: posts, by: { $0.uid })
+//        
+//        
+//        let mapped = grouped.map { (name, posts) -> (name: String, value: Int) in
+//            let value: Int
+//            switch selectedFilter {
+//                case .netScore:
+//                    value = posts.reduce(0) { $0 + $1.score }
+//                case .mostUpvotes:
+//                    value = posts.reduce(0) { $0 + $1.upvotes }
+//                case .mostDownvotes:
+//                    value = posts.reduce(0) { $0 + $1.downvotes }
+//            }
+//            return (name: name, value: value)
+//        }
+//        
+//        switch selectedFilter {
+//            case .netScore:
+//                return mapped.sorted { $0.value < $1.value }
+//            case .mostUpvotes:
+//                return mapped.sorted { $0.value > $1.value }
+//            case .mostDownvotes:
+//                return mapped.sorted { $0.value > $1.value }
+//        }
+//    }
     
     var body: some View {
         NavigationStack {
@@ -88,7 +91,9 @@ struct LeaderboardView: View {
                         .padding(.top, 16)
                         .padding(.bottom, 8)
                     
-                    if leaderboardData.isEmpty {
+                    if isLoading {
+                        Text("Loading...")
+                    } else if leaderboardData.isEmpty {
                         emptyStateView
                     } else {
                         leaderboardListView
@@ -98,7 +103,49 @@ struct LeaderboardView: View {
             .navigationTitle("Leaderboard")
             .navigationBarTitleDisplayMode(.large)
         }
+        .task(id: selectedFilter) {
+            await refreshLeaderboardData()
+        }
     }
+    
+    
+    private func refreshLeaderboardData() async {
+            isLoading = true
+
+            let grouped = Dictionary(grouping: posts, by: { $0.uid })
+            var mappedItems: [(name: String, value: Int)] = []
+            
+            // Iterate and perform async lookups using the cached UserService
+            for (uid, userPosts) in grouped {
+                
+                guard let groupId = userPosts.first?.groupId else { continue }
+
+                let value: Int
+                switch selectedFilter {
+                    case .netScore:
+                        value = userPosts.reduce(0) { $0 + $1.score }
+                    case .mostUpvotes:
+                        value = userPosts.reduce(0) { $0 + $1.upvotes }
+                    case .mostDownvotes:
+                        value = userPosts.reduce(0) { $0 + $1.downvotes }
+                }
+                
+                // Call the async function from the shared UserService
+                let nickname = (try? await UserService.shared.getNickname(forUserId: uid, inGroup: groupId)) ?? "Unknown"
+                
+                mappedItems.append((name: nickname, value: value))
+            }
+            
+            // Sort the results and update the @State property (this runs on the main thread automatically)
+            switch selectedFilter {
+                case .netScore:
+                    self.leaderboardData = mappedItems.sorted { $0.value < $1.value }
+                case .mostUpvotes, .mostDownvotes:
+                    self.leaderboardData = mappedItems.sorted { $0.value > $1.value }
+            }
+            
+            isLoading = false
+        }
     
     private var filterSelector: some View {
         HStack(spacing: 8) {
@@ -382,6 +429,7 @@ struct LeaderboardRowView: View {
         }
     }
 }
+
 
 
 #Preview {

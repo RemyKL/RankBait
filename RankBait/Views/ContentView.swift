@@ -30,7 +30,7 @@ struct ContentView: View {
                 LeaderboardView(posts: viewModel.posts)
             }
             Tab("Profile", systemImage: "person.fill") {
-                ProfileView()
+                ProfileView(selectedGroupId: group.id)
                 
             }
         }
@@ -118,11 +118,8 @@ struct ContentView: View {
                 }
             }
             .sheet(isPresented: $viewModel.showingAddPost) {
-                AddPostView(currentGroupId: group.id) { post in
-                    withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
-                        viewModel.addPost(post)
-                    }
-                }
+                AddPostView(viewModel: viewModel, currentGroupId: group.id)
+                
             }
         }
     }

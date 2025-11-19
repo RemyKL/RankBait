@@ -5,17 +5,21 @@ struct Post: Identifiable, Codable {
     @DocumentID var documentId: String?
     let id: UUID
     var groupId: String
-    var friendName: String
+    var uid: String
+    var posterid: String
+    var imageUrl: String
     var content: String
     var upvotes: Int
     var downvotes: Int
     var createdAt: Date
     var votes: [String: String]
     
-    init(id: UUID = UUID(), groupId: String, friendName: String, content: String, upvotes: Int = 0, downvotes: Int = 0, createdAt: Date = Date(), votes: [String: String] = [:]) {
+    init(id: UUID = UUID(), groupId: String, uid: String, posterid: String, imageUrl: String, content: String, upvotes: Int = 0, downvotes: Int = 0, createdAt: Date = Date(), votes: [String: String] = [:]) {
         self.id = id
         self.groupId = groupId
-        self.friendName = friendName
+        self.uid = uid
+        self.posterid = posterid
+        self.imageUrl = imageUrl
         self.content = content
         self.upvotes = upvotes
         self.downvotes = downvotes
@@ -27,16 +31,23 @@ struct Post: Identifiable, Codable {
         upvotes - downvotes
     }
     
-    func currentDeviceVote() -> String? {
-        let deviceId = DeviceIdentifier.shared.deviceId
-        return votes[deviceId]
+//    func currentDeviceVote() -> String? {
+//        let deviceId = DeviceIdentifier.shared.deviceId
+//        return votes[deviceId]
+//    }
+    
+    func currentUserVote() -> String? {
+        let uid = UserService.shared.getuid() ?? ""
+        return votes[uid]
     }
     
     enum CodingKeys: String, CodingKey {
         case documentId
         case id
         case groupId
-        case friendName
+        case uid
+        case posterid
+        case imageUrl
         case content
         case upvotes
         case downvotes

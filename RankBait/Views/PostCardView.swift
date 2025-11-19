@@ -1,33 +1,42 @@
 import SwiftUI
+import SDWebImageSwiftUI
 
 struct PostCardView: View {
     let post: Post
     let onUpvote: () -> Void
     let onDownvote: () -> Void
     @State private var isPressed: Bool = false
+    @State private var profileImage: String? = nil
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
                 HStack(spacing: 12) {
                     ZStack {
-                        Circle()
-                            .fill(.ultraThinMaterial)
-                            .frame(width: 44, height: 44)
-                        
-                        Image(systemName: "person.circle.fill")
-                            .font(.title2)
-                            .foregroundStyle(
-                                LinearGradient(
-                                    colors: [.blue, .cyan],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                    }
+                            // Outer Circle/Placeholder size definition
+                            Circle()
+                                .fill(.ultraThinMaterial)
+                                .frame(width: 44, height: 44)
+
+                            // Use a conditional check for the URL loading status
+                            if let urlString = profileImage, let url = URL(string: urlString) {
+                                WebImage(url: url)
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(width: 44, height: 44) // Correct size
+                                    .clipShape(Circle())
+                            } else {
+                                // Fallback for when profileImage is nil or loading
+                                Image(systemName: "person.circle.fill")
+                                    .font(.system(size: 40)) // Adjusted size to fit 44x44 container
+                                    .foregroundStyle(
+                                        LinearGradient(colors: [.blue, .cyan], startPoint: .topLeading, endPoint: .bottomTrailing)
+                                    )
+                            }
+                        }
                     
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(post.friendName)
+                        NicknameView(uid: post.uid, groupId: post.groupId)
                             .font(.system(.headline, design: .rounded))
                             .fontWeight(.bold)
                             .foregroundStyle(.primary)
@@ -36,6 +45,15 @@ struct PostCardView: View {
                             .font(.system(.caption2, design: .default))
                             .foregroundStyle(.secondary)
                     }
+                }.task {
+                    do {
+                        self.profileImage = try await UserService.shared.getProfilePictureUrl(forUserId: post.uid)
+                    } catch {
+                        print("error fetching profile picture for user")
+                        self.profileImage = nil
+                    }
+                    
+                    
                 }
                 
                 Spacer()
@@ -55,7 +73,7 @@ struct PostCardView: View {
                         : LinearGradient(colors: [.red, .pink], startPoint: .top, endPoint: .bottom)
                 )
                 .padding(.horizontal, 14)
-                .padding(.vertical, 10)
+                .padding(EdgeInsets(top: 10, leading: 14, bottom: 6, trailing: 14))
                 .background(
                     RoundedRectangle(cornerRadius: 14)
                         .fill(.ultraThinMaterial)
@@ -71,8 +89,8 @@ struct PostCardView: View {
                 )
             }
             
-            Divider()
-                .background(.ultraThinMaterial)
+//            Divider()
+//                .background(.ultraThinMaterial)
             
             // Content
             Text(post.content)
@@ -81,13 +99,23 @@ struct PostCardView: View {
                 .foregroundStyle(.primary)
                 .lineLimit(nil)
             
+            let urlString = post.imageUrl
+            if let url = URL(string: urlString) {
+                WebImage(url: url)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxWidth: .infinity) // Correct size
+                    .cornerRadius(12)
+                    .padding(.vertical, 8)
+            }
+            
             // Voting
             HStack(spacing: 12) {
                 VoteButton(
                     icon: "arrow.up.circle.fill",
                     label: "\(post.upvotes)",
                     isUpvote: true,
-                    isActive: post.currentDeviceVote() == "up",
+                    isActive: post.currentUserVote() == "up",
                     action: onUpvote
                 )
 
@@ -95,7 +123,7 @@ struct PostCardView: View {
                     icon: "arrow.down.circle.fill",
                     label: "\(post.downvotes)",
                     isUpvote: false,
-                    isActive: post.currentDeviceVote() == "down",
+                    isActive: post.currentUserVote() == "down",
                     action: onDownvote
                 )
 

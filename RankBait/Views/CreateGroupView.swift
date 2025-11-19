@@ -106,13 +106,20 @@ struct CreateGroupView: View {
         Task {
             do {
                 let trimmedUsername = username.trimmingCharacters(in: .whitespaces)
+                guard let uid = UserService.shared.getuid() else {
+                    print("Error getting user id")
+                    return
+                }
                 
                 UserProfileManager.shared.setUsername(trimmedUsername)
                 
+                
                 let group = try await GroupManager.shared.createGroup(
                     name: groupName.trimmingCharacters(in: .whitespaces),
-                    creatorUsername: trimmedUsername
+                    creatorid: uid
                 )
+                
+                try await UserService.shared.addUsername(groupId: group.id, username: trimmedUsername, toUserWithId: uid)
                 
                 await MainActor.run {
                     onCreate(group)

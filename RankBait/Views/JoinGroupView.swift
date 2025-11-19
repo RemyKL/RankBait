@@ -125,12 +125,19 @@ struct JoinGroupView: View {
                 if let group = try await GroupManager.shared.fetchGroup(byInviteCode: inviteCode) {
                     let trimmedUsername = username.trimmingCharacters(in: .whitespaces)
                     
+                    guard let uid = UserService.shared.getuid() else {
+                        print("Error getting user id")
+                        return
+                    }
+                    
                     UserProfileManager.shared.setUsername(trimmedUsername)
                     
                     try await GroupManager.shared.addMemberToGroup(
                         groupId: group.id,
-                        username: trimmedUsername
+                        uid: uid
                     )
+                    
+                    try await UserService.shared.addUsername(groupId: group.id, username: trimmedUsername, toUserWithId: uid)
                     
                     await MainActor.run {
                         onJoin(group)

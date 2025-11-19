@@ -1,6 +1,7 @@
 import SwiftUI
 import Observation
 import FirebaseFirestore
+import Combine
 
 @Observable
 class PostViewModel {
@@ -9,6 +10,7 @@ class PostViewModel {
     var currentGroupId: String? = nil
     private var listener: ListenerRegistration?
     
+    var isPosting = false
     init() {}
     
     deinit {
@@ -26,21 +28,70 @@ class PostViewModel {
     }
     
     // MARK: - Create Post
-    func addPost(_ post: Post) {
-        guard currentGroupId != nil else {
-            print("Error: No group selected")
-            return
-        }
-        
-        Task {
+//    func addPost(_ post: Post) {
+//        guard currentGroupId != nil else {
+//            print("Error: No group selected")
+//            return
+//        }
+//        
+//        Task {
+//            do {
+//                try await FirebaseManager.shared.addPost(post)
+//                print("Post added successfully")
+//            } catch {
+//                print("Error adding post: \(error.localizedDescription)")
+//            }
+//        }
+//    }
+    func createPost(
+            content: String,
+            selectedMemberId: String,
+            userId: String,
+            image: UIImage? // 👈 NEW: Accepts the image
+        ) async {
+            guard let groupId = currentGroupId, !isPosting else {
+                print("Error: Post creation already in progress or no group selected")
+                return
+            }
+            
+            isPosting = true // Start loading
+            
             do {
-                try await FirebaseManager.shared.addPost(post)
-                print("Post added successfully")
+                var postImageUrl: String? = nil
+                
+                // 1. Generate a unique ID for the new post immediately
+                let postId = UUID() // Use this for the Firestore document ID and Cloudinary public ID
+                
+                // 2. Upload the image (if present)
+                if let imageToUpload = image {
+                    postImageUrl = try await UserService.shared.uploadPostImage(
+                        imageToUpload,
+                        forPostId: postId.uuidString,
+                        userId: userId
+                    )
+                }
+                
+                // 3. Create the Post object
+                let newPost = Post(
+                    id: postId, // Use the generated Post ID
+                    groupId: groupId,
+                    uid: selectedMemberId, // The user the post is ABOUT
+                    posterid: userId, // The user WHO IS POSTING
+                    imageUrl: postImageUrl ?? "", // The URL from Cloudinary
+                    content: content.trimmingCharacters(in: .whitespaces)
+                )
+                
+                // 4. Save the post data to Firestore
+                try await FirebaseManager.shared.addPost(newPost)
+                print("Post added successfully with URL: \(postImageUrl ?? "None")")
+                
             } catch {
                 print("Error adding post: \(error.localizedDescription)")
+                // Handle error, e.g., show an alert
             }
+            
+            isPosting = false // Stop loading
         }
-    }
     
     // MARK: - Delete
     func deletePost(_ post: Post) {
@@ -58,22 +109,23 @@ class PostViewModel {
     func upVote(_ post: Post) {
         guard let index = posts.firstIndex(where: { $0.id == post.id }) else { return }
         
-        let deviceId = DeviceIdentifier.shared.deviceId
+        let userId = UserService.shared.getuid() ?? ""
+        
         var updatedPost = posts[index]
-        let currentVote = updatedPost.votes[deviceId]
+        let currentVote = updatedPost.votes[userId]
         
         if currentVote == nil {
             updatedPost.upvotes += 1
-            updatedPost.votes[deviceId] = "up"
+            updatedPost.votes[userId] = "up"
         }
         else if currentVote == "up" {
             updatedPost.upvotes -= 1
-            updatedPost.votes.removeValue(forKey: deviceId)
+            updatedPost.votes.removeValue(forKey: userId)
         }
         else if currentVote == "down" {
             updatedPost.downvotes -= 1
             updatedPost.upvotes += 1
-            updatedPost.votes[deviceId] = "up"
+            updatedPost.votes[userId] = "up"
         }
         
         posts[index] = updatedPost
@@ -98,22 +150,22 @@ class PostViewModel {
     func downVote(_ post: Post) {
         guard let index = posts.firstIndex(where: { $0.id == post.id }) else { return }
         
-        let deviceId = DeviceIdentifier.shared.deviceId
+        let userId = UserService.shared.getuid() ?? ""
         var updatedPost = posts[index]
-        let currentVote = updatedPost.votes[deviceId]
+        let currentVote = updatedPost.votes[userId]
         
         if currentVote == nil {
             updatedPost.downvotes += 1
-            updatedPost.votes[deviceId] = "down"
+            updatedPost.votes[userId] = "down"
         }
         else if currentVote == "up" {
             updatedPost.upvotes -= 1
             updatedPost.downvotes += 1
-            updatedPost.votes[deviceId] = "down"
+            updatedPost.votes[userId] = "down"
         }
         else if currentVote == "down" {
             updatedPost.downvotes -= 1
-            updatedPost.votes.removeValue(forKey: deviceId)
+            updatedPost.votes.removeValue(forKey: userId)
         }
         
         posts[index] = updatedPost

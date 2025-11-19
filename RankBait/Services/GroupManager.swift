@@ -9,8 +9,8 @@ class GroupManager {
     private init() {}
     
     // MARK: - Create Group
-    func createGroup(name: String, creatorUsername: String) async throws -> Group {
-        let group = Group(name: name, members: [creatorUsername])
+    func createGroup(name: String, creatorid: String) async throws -> Group {
+        let group = Group(name: name, members: [creatorid])
         
         let groupData: [String: Any] = [
             "id": group.id,
@@ -58,7 +58,7 @@ class GroupManager {
     }
     
     // MARK: - Add Member to Group
-    func addMemberToGroup(groupId: String, username: String) async throws {
+    func addMemberToGroup(groupId: String, uid: String) async throws {
         let groupRef = db.collection(groupsCollection).document(groupId)
         
         let snapshot = try await groupRef.getDocument()
@@ -66,8 +66,8 @@ class GroupManager {
             throw NSError(domain: "GroupManager", code: 404, userInfo: [NSLocalizedDescriptionKey: "Group not found"])
         }
         
-        if !group.members.contains(username) {
-            group.members.append(username)
+        if !group.members.contains(uid) {
+            group.members.append(uid)
             try await groupRef.updateData(["members": group.members])
         }
     }
@@ -93,4 +93,10 @@ class GroupManager {
         }
         return group.members.sorted()
     }
+    
+    func getMembersWithNicknames(for groupId: String) async throws -> [String : String] {
+        let memberIds = try await getMembers(for: groupId)
+        return try await UserService.shared.getNicknames(forUserIds: memberIds, inGroup: groupId)
+    }
+
 }

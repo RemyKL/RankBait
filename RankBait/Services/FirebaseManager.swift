@@ -17,7 +17,9 @@ class FirebaseManager {
         let postData: [String: Any] = [
             "id": post.id.uuidString,
             "groupId": post.groupId,
-            "friendName": post.friendName,
+            "posterid": post.posterid,
+            "uid": post.uid,
+            "imageUrl": post.imageUrl,
             "content": post.content,
             "upvotes": post.upvotes,
             "downvotes": post.downvotes,

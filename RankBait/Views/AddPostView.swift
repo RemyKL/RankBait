@@ -1,16 +1,20 @@
 import SwiftUI
+import PhotosUI
 
 struct AddPostView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var selectedMember: String = ""
+    @Bindable var viewModel : PostViewModel
+    @State private var selectedMember: (key: String, value: String) = ("", "")
     @State private var content: String = ""
-    @State private var members: [String] = []
+    @State private var members: [String : String] = [:]
     @State private var isLoadingMembers = true
+    @State private var selectedImage: PhotosPickerItem? = nil
+    @State private var image: UIImage? = nil
     let currentGroupId: String
-    let onAdd: (Post) -> Void
+//    let onAdd: (Post) -> Void
     
     var isValid: Bool {
-        !selectedMember.isEmpty &&
+        !selectedMember.key.isEmpty &&
         !content.trimmingCharacters(in: .whitespaces).isEmpty
     }
     
@@ -73,51 +77,119 @@ struct AddPostView: View {
                         )
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
-                        .background(
-                            RoundedRectangle(cornerRadius: 10)
-                                .fill(.ultraThinMaterial)
-                                .shadow(color: .red.opacity(0.2), radius: 6, y: 3)
-                        )
+//                        .background(
+//                            RoundedRectangle(cornerRadius: 10)
+//                                .fill(.ultraThinMaterial)
+//                                .shadow(color: .red.opacity(0.2), radius: 6, y: 3)
+//                        )
                     }
                 }
                 
+//                ToolbarItem(placement: .confirmationAction) {
+//                    Button {
+//                        let newPost = Post(
+//                            groupId: currentGroupId,
+//                            uid: selectedMember.key,
+//                            posterid: UserService.shared.getuid() ?? "test",
+//                            imageUrl: "",
+//                            content: content.trimmingCharacters(in: .whitespaces))
+//                        onAdd(newPost)
+//                        dismiss()
+//                    } label: {
+//                        HStack(spacing: 6) {
+//                            Image(systemName: "checkmark.circle.fill")
+//                                .font(.body)
+//                                .fontWeight(.semibold)
+//                            
+//                            Text("Add")
+//                                .font(.system(.body, design: .rounded))
+//                                .fontWeight(.bold)
+//                        }
+//                        .foregroundStyle(
+//                            LinearGradient(
+//                                colors: isValid
+//                                    ? [Color.blue, Color.cyan]
+//                                    : [Color.gray.opacity(0.5), Color.gray.opacity(0.3)],
+//                                startPoint: .topLeading,
+//                                endPoint: .bottomTrailing
+//                            )
+//                        )
+//                        .padding(.horizontal, 16)
+//                        .padding(.vertical, 8)
+//                    }
+//                    .disabled(!isValid)
+//                    .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isValid)
+//                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
-                        let newPost = Post(
-                            groupId: currentGroupId,
-                            friendName: selectedMember,
-                            content: content.trimmingCharacters(in: .whitespaces))
-                        onAdd(newPost)
-                        dismiss()
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(.body)
-                                .fontWeight(.semibold)
-                            
-                            Text("Add")
-                                .font(.system(.body, design: .rounded))
-                                .fontWeight(.bold)
+                        // Call the new async function in the ViewModel
+                        Task {
+                            await handlePostCreation()
                         }
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: isValid
-                                    ? [Color.blue, Color.cyan]
-                                    : [Color.gray.opacity(0.5), Color.gray.opacity(0.3)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
+                    } label: {
+                        // Show ProgressView if loading, otherwise show the text/icon
+                        if viewModel.isPosting {
+                            ProgressView()
+                        } else {
+                            HStack(spacing: 6) {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.body)
+                                    .fontWeight(.semibold)
+                                Text("Add")
+                                    .font(.system(.body, design: .rounded))
+                                    .fontWeight(.bold)
+                            }
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: isValid
+                                        ? [Color.blue, Color.cyan]
+                                        : [Color.gray.opacity(0.5), Color.gray.opacity(0.3)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
                             )
-                        )
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                        }
                     }
-                    .disabled(!isValid)
+                    // Disable if invalid OR if posting
+                    .disabled(!isValid || viewModel.isPosting)
                     .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isValid)
                 }
             }
             .onAppear {
                 loadMembers()
             }
+        }
+    }
+    
+
+    func handlePostCreation() async {
+        // 1. Get the current user's UID (assuming this is the user posting)
+        guard let postingUserId = UserService.shared.getuid(),
+              let currentGroupId = viewModel.currentGroupId // Assuming VM knows the group ID
+        else {
+            print("Error: Missing required data for posting.")
+            return
+        }
+        if selectedMember.key == "" {
+            print("no selected member")
+            return
+        }
+        
+        let targetMemberId = selectedMember.key
+
+        // 2. Call the async function on the view model
+        await viewModel.createPost(
+            content: content,
+            selectedMemberId: targetMemberId,
+            userId: postingUserId,
+            image: image // Pass the loaded UIImage
+        )
+        
+        // 3. Dismiss the view only if the post was successful
+        if !viewModel.isPosting { // isPosting should be false if the async function completed
+            dismiss()
         }
     }
     
@@ -172,9 +244,9 @@ struct AddPostView: View {
                     .padding(.top, 8)
                     
                     Menu {
-                        ForEach(members, id: \.self) { member in
-                            Button(member) {
-                                selectedMember = member
+                        ForEach(members.sorted(by: <), id: \.key) { key, value in
+                            Button(value) {
+                                selectedMember = (key, value)
                             }
                         }
                     } label: {
@@ -196,10 +268,10 @@ struct AddPostView: View {
                             }
                             
                             VStack(alignment: .leading, spacing: 4) {
-                                Text(selectedMember.isEmpty ? "Select Member" : selectedMember)
+                                Text(selectedMember.key.isEmpty ? "Select Member" : selectedMember.value)
                                     .font(.system(.body, design: .rounded))
-                                    .fontWeight(selectedMember.isEmpty ? .regular : .medium)
-                                    .foregroundStyle(selectedMember.isEmpty ? .secondary : .primary)
+                                    .fontWeight(selectedMember.value.isEmpty ? .regular : .medium)
+                                    .foregroundStyle(selectedMember.value.isEmpty ? .secondary : .primary)
                             }
                             
                             Spacer()
@@ -274,6 +346,72 @@ struct AddPostView: View {
                     )
                     .padding(.horizontal, 20)
                 }
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "checkmark.seal.fill")
+                            .font(.caption)
+                            .fontWeight(.bold)
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [.green, .mint],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                        
+                        Text("PROOF")
+                            .font(.system(.caption, design: .rounded))
+                            .fontWeight(.bold)
+                            .tracking(1.2)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.horizontal, 20)
+                    
+                    VStack() {
+                        PhotosPicker(
+                            selection: $selectedImage,
+                            matching: .images,
+                            photoLibrary: .shared()
+                        ) {
+                            HStack {
+                                Spacer()
+                                Text("Upload an Image").font(.system(size: 16))
+                                Image(systemName: "square.and.arrow.up").font(.system(size: 24)).padding(8)
+                                Spacer()
+                            }
+                        }
+                        if let image = image {
+                            Image(uiImage: image)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(maxWidth: .infinity) // Correct size
+                                .cornerRadius(12)
+                                .padding(8)
+                        }
+                    }
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(.ultraThinMaterial)
+                            .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 4)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(.white.opacity(0.5), lineWidth: 1)
+                                    .blur(radius: 0.5)
+                            )
+                    )
+                    .padding(.horizontal, 20)
+                    
+                    
+                }
+                .onChange(of: selectedImage) { newItem in
+                    Task {
+                        if let data = try? await newItem?.loadTransferable(type: Data.self) {
+                            if let uiImage = UIImage(data: data) {
+                                self.image = uiImage
+                            }
+                        }
+                    }
+                }
                 
                 Spacer(minLength: 20)
             }
@@ -283,20 +421,25 @@ struct AddPostView: View {
     
     private func loadMembers() {
         Task {
-            if let fetchedMembers = try? await GroupManager.shared.getMembers(for: currentGroupId) {
+            do {
+                let fetched = try await GroupManager.shared.getMembersWithNicknames(for: currentGroupId)
+
                 await MainActor.run {
-                    members = fetchedMembers
-                    if !members.isEmpty {
-                        selectedMember = members[0]
-                    }
+                    members = fetched   // [String : String]
+                    selectedMember = fetched.first ?? ("" , "User")
                     isLoadingMembers = false
                 }
-            } else {
+
+            } catch {
                 await MainActor.run {
-                    members = []
+                    members = [:]
                     isLoadingMembers = false
                 }
             }
         }
     }
 }
+
+//#Preview {
+//    ContentView()
+//}
