@@ -24,7 +24,7 @@ class UserService: ObservableObject {
     
     private init() {}
     
-    func createUserDocument(uid: String, email: String) {
+    func createUserDocument(uid: String, email: String) async throws {
         let newUser = User(id: uid, email: email)
         
         try? db.collection("users").document(uid).setData(from: newUser)

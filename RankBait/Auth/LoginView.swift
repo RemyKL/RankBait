@@ -11,7 +11,11 @@ struct LoginView: View {
     @State private var email = ""
     @State private var password = ""
     @StateObject private var auth = AuthViewModel()
+    
     @Environment(\.isDarkModeOn) private var isDarkModeOn
+    
+    @State private var showAlert = false
+    @State private var errorMessage = ""
 
     var body: some View {
         NavigationStack {
@@ -55,7 +59,18 @@ struct LoginView: View {
                 }
                 
                 Button {
-                    auth.signIn(email: email, password: password)
+                    Task {
+                        do {
+
+                            try await auth.signIn(email: email, password: password)
+
+                            
+                        } catch {
+                            // Failure logic (error is caught here)
+                            errorMessage = error.localizedDescription
+                            showAlert = true
+                        }
+                        }
                 } label : {
                     HStack {
                         Spacer()
@@ -79,6 +94,14 @@ struct LoginView: View {
             }.padding(20)
             
         }
+        .alert("Sign In Error", isPresented: $showAlert) {
+                    Button("OK", role: .cancel) {
+                        // Optional: Action when the user taps OK
+                    }
+                } message: {
+                    // Display the dynamically set error message
+                    Text(errorMessage)
+                }
         .padding()
     }
 }

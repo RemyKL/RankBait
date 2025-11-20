@@ -12,6 +12,9 @@ struct RegisterView: View {
     @State private var password = ""
     @StateObject private var auth = AuthViewModel()
     @Environment(\.isDarkModeOn) private var isDarkModeOn
+    
+    @State private var showAlert = false
+    @State private var errorMessage = ""
 
     var body: some View {
 //        VStack(spacing: 20) {
@@ -70,7 +73,20 @@ struct RegisterView: View {
             }
             
             Button {
-                auth.register(email: email, password: password)
+                Task {
+                        do {
+                            // Call the new async throws function
+                            let uid = try await auth.register(email: email, password: password)
+                            
+                            // Success logic (e.g., navigate to home screen)
+                            print("Registration and document creation successful for UID: \(uid)")
+                            
+                        } catch {
+                            // Failure logic (shows the alert)
+                            errorMessage = error.localizedDescription
+                            showAlert = true
+                        }
+                    }
             } label : {
                 HStack {
                     Spacer()
@@ -87,7 +103,15 @@ struct RegisterView: View {
                 ).foregroundColor(Color.white).cornerRadius(20)
             }
         
-        }.padding(30)
+        }.alert("Sign Up Error", isPresented: $showAlert) {
+            Button("OK", role: .cancel) {
+                // Optional: Action when the user taps OK
+            }
+        } message: {
+            // Display the dynamically set error message
+            Text(errorMessage)
+        }
+        .padding(30)
 
     }
 }
