@@ -6,6 +6,7 @@ struct JoinGroupView: View {
     @State private var username = ""
     @State private var isJoining = false
     @State private var errorMessage: String?
+    @Environment(\.isDarkModeOn) private var isDarkModeOn
     let onJoin: (Group) -> Void
     
     var isValid: Bool {
@@ -17,27 +18,52 @@ struct JoinGroupView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                MeshGradient(
-                    width: 3,
-                    height: 3,
-                    points: [
-                        .init(0, 0), .init(0.5, 0), .init(1, 0),
-                        .init(0, 0.5), .init(0.5, 0.5), .init(1, 0.5),
-                        .init(0, 1), .init(0.5, 1), .init(1, 1)
-                    ],
-                    colors: [
-                        Color(red: 0.97, green: 0.94, blue: 1.0),
-                        Color(red: 0.95, green: 0.98, blue: 1.0),
-                        Color(red: 0.98, green: 0.95, blue: 0.98),
-                        Color(red: 0.96, green: 0.93, blue: 1.0),
-                        Color(red: 0.95, green: 0.98, blue: 1.0),
-                        Color(red: 0.97, green: 0.96, blue: 0.99),
-                        Color(red: 0.98, green: 0.94, blue: 0.99),
-                        Color(red: 0.96, green: 0.98, blue: 1.0),
-                        Color(red: 0.97, green: 0.96, blue: 1.0)
-                    ]
-                )
-                .ignoresSafeArea()
+                if isDarkModeOn {
+                    // MARK: - Dark Mode Gradient
+                    MeshGradient(
+                        width: 3, height: 3,
+                        points: [
+                            .init(0, 0), .init(0.5, 0), .init(1, 0),
+                            .init(0, 0.5), .init(0.5, 0.5), .init(1, 0.5),
+                            .init(0, 1), .init(0.5, 1), .init(1, 1)
+                        ],
+                        // Darker, subtler colors
+                        colors: [
+                            Color(red: 0.1, green: 0.1, blue: 0.15),
+                            Color(red: 0.08, green: 0.12, blue: 0.15),
+                            Color(red: 0.15, green: 0.1, blue: 0.12),
+                            Color(red: 0.09, green: 0.08, blue: 0.15),
+                            Color(red: 0.08, green: 0.12, blue: 0.15),
+                            Color(red: 0.12, green: 0.11, blue: 0.14),
+                            Color(red: 0.14, green: 0.09, blue: 0.13),
+                            Color(red: 0.09, green: 0.12, blue: 0.15),
+                            Color(red: 0.11, green: 0.1, blue: 0.14)
+                        ]
+                    )
+                    .ignoresSafeArea()
+                } else {
+                    // MARK: - Light Mode Gradient (Your original colors)
+                    MeshGradient(
+                        width: 3, height: 3,
+                        points: [
+                            .init(0, 0), .init(0.5, 0), .init(1, 0),
+                            .init(0, 0.5), .init(0.5, 0.5), .init(1, 0.5),
+                            .init(0, 1), .init(0.5, 1), .init(1, 1)
+                        ],
+                        colors: [
+                            Color(red: 0.97, green: 0.94, blue: 1.0),
+                            Color(red: 0.95, green: 0.98, blue: 1.0),
+                            Color(red: 0.98, green: 0.95, blue: 0.98),
+                            Color(red: 0.96, green: 0.93, blue: 1.0),
+                            Color(red: 0.95, green: 0.98, blue: 1.0),
+                            Color(red: 0.97, green: 0.96, blue: 0.99),
+                            Color(red: 0.98, green: 0.94, blue: 0.99),
+                            Color(red: 0.96, green: 0.98, blue: 1.0),
+                            Color(red: 0.97, green: 0.96, blue: 1.0)
+                        ]
+                    )
+                    .ignoresSafeArea()
+                }
                 
                 VStack(spacing: 24) {
                     Spacer()
