@@ -1,10 +1,3 @@
-//
-//  RegisterView.swift
-//  RankBait
-//
-//  Created by Remy Laurens on 11/16/25.
-//
-
 import SwiftUI
 
 struct RegisterView: View {
@@ -17,22 +10,6 @@ struct RegisterView: View {
     @State private var errorMessage = ""
 
     var body: some View {
-//        VStack(spacing: 20) {
-//            Text("Create Account")
-//                .font(.title)
-//                .bold()
-//
-//            TextField("Email", text: $email)
-//                .textFieldStyle(.roundedBorder)
-//            SecureField("Password", text: $password)
-//                .textFieldStyle(.roundedBorder)
-//
-//            Button("Sign Up") {
-//                auth.register(email: email, password: password)
-//            }
-//            .buttonStyle(.borderedProminent)
-//        }
-//        .padding()
         VStack (spacing: 20){
             VStack {
                 Image("Register")
@@ -48,7 +25,7 @@ struct RegisterView: View {
                     Spacer()
                 }
                 HStack {
-                    Text("Enter a username and password")
+                    Text("Enter a Username and Password")
                         .font(.caption)
                         .foregroundStyle(Color.gray)
                     Spacer()
@@ -74,23 +51,18 @@ struct RegisterView: View {
             
             Button {
                 Task {
-                        do {
-                            // Call the new async throws function
-                            let uid = try await auth.register(email: email, password: password)
-                            
-                            // Success logic (e.g., navigate to home screen)
-                            print("Registration and document creation successful for UID: \(uid)")
-                            
-                        } catch {
-                            // Failure logic (shows the alert)
-                            errorMessage = error.localizedDescription
-                            showAlert = true
-                        }
+                    do {
+                        let uid = try await auth.register(email: email, password: password)  
+                        print("Registration and Document Creation Successful for UID: \(uid)")  
+                    } catch {
+                        errorMessage = error.localizedDescription
+                        showAlert = true
                     }
+                }
             } label : {
                 HStack {
                     Spacer()
-                    Text("Sign up")
+                    Text("Sign Up")
                     Spacer()
                 }
                 .padding(10)
@@ -105,10 +77,10 @@ struct RegisterView: View {
         
         }.alert("Sign Up Error", isPresented: $showAlert) {
             Button("OK", role: .cancel) {
-                // Optional: Action when the user taps OK
+                // dismiss alert
             }
         } message: {
-            // Display the dynamically set error message
+            // display error message
             Text(errorMessage)
         }
         .padding(30)

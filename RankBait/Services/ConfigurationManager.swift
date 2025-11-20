@@ -1,19 +1,12 @@
-//
-//  ConfigurationManager.swift
-//  RankBait
-//
-//  Created by Remy Laurens on 11/18/25.
-//
-
 import Foundation
 
-
+// loads Cloudinary credentials from Configuration.plist
 struct AppConfiguration {
     static let cloudinaryCloudName: String = {
         guard let path = Bundle.main.path(forResource: "Configuration", ofType: "plist"),
               let configDict = NSDictionary(contentsOfFile: path) as? [String: Any],
               let value = configDict["CloudinaryCloudName"] as? String else {
-            fatalError("CloudinaryCloudName not found in Configuration.plist!")
+            fatalError("CloudinaryCloudName Not Found in Configuration.plist!")
         }
         return value
     }()
@@ -23,9 +16,8 @@ struct AppConfiguration {
         guard let path = Bundle.main.path(forResource: "Configuration", ofType: "plist"),
               let configDict = NSDictionary(contentsOfFile: path) as? [String: Any],
               let value = configDict["CloudinaryUploadPreset"] as? String else {
-            fatalError("CloudinaryUploadPreset not found in Configuration.plist!")
+            fatalError("CloudinaryUploadPreset Not Found in Configuration.plist!")
         }
         return value
     }()
 }
-

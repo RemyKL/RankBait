@@ -121,6 +121,7 @@ struct CreateGroupView: View {
             }
         }
         .onAppear {
+            // uses cached username value if available
             if let savedUsername = UserProfileManager.shared.username {
                 username = savedUsername
             }
@@ -139,12 +140,13 @@ struct CreateGroupView: View {
                 
                 UserProfileManager.shared.setUsername(trimmedUsername)
                 
-                
+                // creates group with user id as creator
                 let group = try await GroupManager.shared.createGroup(
                     name: groupName.trimmingCharacters(in: .whitespaces),
                     creatorid: uid
                 )
                 
+                // adds username to the user in the group
                 try await UserService.shared.addUsername(groupId: group.id, username: trimmedUsername, toUserWithId: uid)
                 
                 await MainActor.run {

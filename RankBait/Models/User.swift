@@ -1,22 +1,15 @@
-//
-//  User.swift
-//  RankBait
-//
-//  Created by Remy Laurens on 11/16/25.
-//
-
 import Foundation
 import FirebaseFirestore
 
 struct User: Identifiable, Codable {
-    @DocumentID var id: String?       // uid
+    // properties of a User
+    @DocumentID var id: String?
     var email: String?
     var profileImageUrl: String?
     var createdAt: Date?
     
     // nickname depends on group
-    var nicknames: [String: String]   // key: groupId, value: nickname
-    
+    var nicknames: [String: String] // key: groupId, value: nickname
     
     init(id: String? = nil,
          email: String? = nil,

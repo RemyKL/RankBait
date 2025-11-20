@@ -2,6 +2,7 @@ import SwiftUI
 import FirebaseFirestore
 
 struct Post: Identifiable, Codable {
+    // properties of a Post
     @DocumentID var documentId: String?
     let id: UUID
     var groupId: String
@@ -31,18 +32,13 @@ struct Post: Identifiable, Codable {
         upvotes - downvotes
     }
     
-//    func currentDeviceVote() -> String? {
-//        let deviceId = DeviceIdentifier.shared.deviceId
-//        return votes[deviceId]
-//    }
-    
     func currentUserVote() -> String? {
         let uid = UserService.shared.getuid() ?? ""
         return votes[uid]
     }
     
     enum CodingKeys: String, CodingKey {
-        case documentId
+        case documentId // encode documentId as the wrapped value not the wrapper
         case id
         case groupId
         case uid

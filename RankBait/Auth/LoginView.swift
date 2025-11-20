@@ -1,10 +1,3 @@
-//
-//  LoginView.swift
-//  RankBait
-//
-//  Created by Remy Laurens on 11/16/25.
-//
-
 import SwiftUI
 
 struct LoginView: View {
@@ -34,7 +27,7 @@ struct LoginView: View {
                         Spacer()
                     }
                     HStack {
-                        Text("Please Sign in to continue")
+                        Text("Please Sign In to Continue")
                             .font(.caption)
                             .foregroundStyle(Color.gray)
                         Spacer()
@@ -61,20 +54,16 @@ struct LoginView: View {
                 Button {
                     Task {
                         do {
-
                             try await auth.signIn(email: email, password: password)
-
-                            
                         } catch {
-                            // Failure logic (error is caught here)
                             errorMessage = error.localizedDescription
                             showAlert = true
                         }
-                        }
+                    }
                 } label : {
                     HStack {
                         Spacer()
-                        Text("Sign in")
+                        Text("Sign In")
                         Spacer()
                     }
                     .padding(10)
@@ -88,20 +77,20 @@ struct LoginView: View {
                 }
                 
                 HStack {
-                    Text("Don't have an Account?").font(.caption).foregroundStyle(Color.gray)
-                    NavigationLink("Sign up", destination: RegisterView()).font(Font.caption.bold())
+                    Text("Don't Have An Account?").font(.caption).foregroundStyle(Color.gray)
+                    NavigationLink("Sign Up", destination: RegisterView()).font(Font.caption.bold())
                 }.padding(5)
             }.padding(20)
             
         }
         .alert("Sign In Error", isPresented: $showAlert) {
-                    Button("OK", role: .cancel) {
-                        // Optional: Action when the user taps OK
-                    }
-                } message: {
-                    // Display the dynamically set error message
-                    Text(errorMessage)
-                }
+            Button("OK", role: .cancel) {
+                // dismiss alert
+            }
+        } message: {
+            // display error message
+            Text(errorMessage)
+        }
         .padding()
     }
 }

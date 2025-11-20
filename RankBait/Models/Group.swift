@@ -2,6 +2,7 @@ import Foundation
 import FirebaseFirestore
 
 struct Group: Identifiable, Codable {
+    // properties of a Group
     @DocumentID var documentId: String?
     let id: String
     var name: String
@@ -23,7 +24,7 @@ struct Group: Identifiable, Codable {
     }
     
     enum CodingKeys: String, CodingKey {
-        case documentId
+        case documentId // encode documentId as the wrapped value not the wrapper
         case id
         case name
         case createdAt

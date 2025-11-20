@@ -43,26 +43,27 @@ class PostViewModel {
 //            }
 //        }
 //    }
+
     func createPost(
             content: String,
             selectedMemberId: String,
             userId: String,
-            image: UIImage? // 👈 NEW: Accepts the image
+            image: UIImage?
         ) async {
             guard let groupId = currentGroupId, !isPosting else {
-                print("Error: Post creation already in progress or no group selected")
+                print("Error: Post Creation Already In Progress Or No Group Selected")
                 return
             }
             
-            isPosting = true // Start loading
+            isPosting = true // start loading
             
             do {
                 var postImageUrl: String? = nil
                 
-                // 1. Generate a unique ID for the new post immediately
-                let postId = UUID() // Use this for the Firestore document ID and Cloudinary public ID
+                // generate a unique ID for the new post immediately
+                let postId = UUID()
                 
-                // 2. Upload the image (if present)
+                // upload the image (if present)
                 if let imageToUpload = image {
                     postImageUrl = try await UserService.shared.uploadPostImage(
                         imageToUpload,
@@ -71,26 +72,24 @@ class PostViewModel {
                     )
                 }
                 
-                // 3. Create the Post object
                 let newPost = Post(
-                    id: postId, // Use the generated Post ID
+                    id: postId,
                     groupId: groupId,
-                    uid: selectedMemberId, // The user the post is ABOUT
-                    posterid: userId, // The user WHO IS POSTING
-                    imageUrl: postImageUrl ?? "", // The URL from Cloudinary
+                    uid: selectedMemberId,
+                    posterid: userId,
+                    imageUrl: postImageUrl ?? "",
                     content: content.trimmingCharacters(in: .whitespaces)
                 )
                 
-                // 4. Save the post data to Firestore
+                // save the post data to Firestore
                 try await FirebaseManager.shared.addPost(newPost)
-                print("Post added successfully with URL: \(postImageUrl ?? "None")")
+                print("Post Added Successfully with URL: \(postImageUrl ?? "None")")
                 
             } catch {
-                print("Error adding post: \(error.localizedDescription)")
-                // Handle error, e.g., show an alert
+                print("Error Adding Post: \(error.localizedDescription)")
             }
             
-            isPosting = false // Stop loading
+            isPosting = false // stop loading
         }
     
     // MARK: - Delete
@@ -98,17 +97,19 @@ class PostViewModel {
         Task {
             do {
                 try await FirebaseManager.shared.deletePost(post)
-                print("Post deleted successfully")
+                print("Post Deleted Successfully")
             } catch {
-                print("Error deleting post: \(error.localizedDescription)")
+                print("Error Deleting Post: \(error.localizedDescription)")
             }
         }
     }
     
     // MARK: - Upvote
     func upVote(_ post: Post) {
+        // find the post index
         guard let index = posts.firstIndex(where: { $0.id == post.id }) else { return }
         
+        // get current user ID
         let userId = UserService.shared.getuid() ?? ""
         
         var updatedPost = posts[index]

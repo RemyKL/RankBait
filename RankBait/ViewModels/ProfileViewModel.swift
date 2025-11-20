@@ -1,16 +1,3 @@
-//
-//  ProfileViewModel.swift
-//  RankBait
-//
-//  Created by Remy Laurens on 11/16/25.
-//
-//
-//  ProfileViewModel.swift
-//  RankBait
-//
-//  Created by Remy Laurens on 11/16/25.
-//
-
 import Foundation
 import SwiftUI
 import Combine

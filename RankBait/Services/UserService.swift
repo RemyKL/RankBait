@@ -1,10 +1,3 @@
-//
-//  UserService.swift
-//  RankBait
-//
-//  Created by Remy Laurens on 11/16/25.
-//
-
 import FirebaseFirestore
 import FirebaseFirestore
 import Combine
@@ -27,13 +20,15 @@ class UserService: ObservableObject {
     func createUserDocument(uid: String, email: String) async throws {
         let newUser = User(id: uid, email: email)
         
+        // creates a new user document in Firestore
         try? db.collection("users").document(uid).setData(from: newUser)
     }
     
     func addUsername(groupId: String, username: String, toUserWithId uid: String) async throws {
+        // reference to the user's document
         let userRef = db.collection("users").document(uid)
         
-        // Firestore lets you update a nested dictionary key directly
+        // field path for the specific group's nickname
         let fieldPath = "nicknames.\(groupId)"
         
         try await userRef.updateData([
@@ -41,43 +36,47 @@ class UserService: ObservableObject {
         ])
     }
     
-    func leaveGroup(forGroupId groupId: String, forUserId uid: String) async throws{
+    func leaveGroup(forGroupId groupId: String, forUserId uid: String) async throws {
+        // reference to the group's document
         let groupRef = db.collection("groups").document(groupId)
         
+        // remove the user from the group's members array
         try await groupRef.updateData([
             "members": FieldValue.arrayRemove([uid])
         ])
         
+        // reference to the user's document
         let userRef = db.collection("users").document(uid)
+        // path to the nickname for the specific group
         let updatePath = "nicknames.\(groupId)"
             
         try await userRef.updateData([
-            updatePath: FieldValue.delete() // This deletes the key-value pair
+            updatePath: FieldValue.delete() // deletes the key-value pair
         ])
         
-        
-        print("successfully removed member")
+        print("Successfully Removed Member")
     }
     
     func getGroups(forUserId uid: String) async throws -> [Group] {
+        // reference to the groups collection
         let groupsCollection = db.collection("groups")
         
-        // 1. Query for groups where the 'members' array contains the user's ID
+        // query for groups where the 'members' array contains the user's ID
         let query = groupsCollection
             .whereField("members", arrayContains: uid)
         
         do {
-            // 2. Execute the query
+            // get documents from the query
             let snapshot = try await query.getDocuments()
             
-            // 3. Decode the documents into an array of Group objects
+            // decode the documents into an array of Groups
             let groups = snapshot.documents.compactMap { doc in
                 try? doc.data(as: Group.self)
             }
             
             return groups
         } catch {
-            print("Error fetching groups for user \(uid): \(error.localizedDescription)")
+            print("Error Fetching Groups For User \(uid): \(error.localizedDescription)")
             throw error
         }
     }
@@ -92,13 +91,14 @@ class UserService: ObservableObject {
         var result: [String : String] = [:]
         
         for id in ids {
+            // fetch user document
             let snapshot = try await db.collection("users").document(id).getDocument()
             
             if let user = try? snapshot.data(as: User.self) {
                 if let nickname = user.nicknames[groupId] {
                     result[id] = nickname
                 } else {
-                    // fallback if nickname was never set for this group
+                    // fallback if nickname was never set
                     result[id] = "User"
                 }
             }
