@@ -54,7 +54,6 @@ struct RegisterView: View {
             
             VStack (spacing: 30) {
                 TextField("Email", text: $email)
-                    .frame(width: .infinity)
                     .padding(EdgeInsets(top: 0, leading: 15, bottom: 0, trailing: 0))
                     .background(
                         RoundedRectangle(cornerRadius: 20)
@@ -62,7 +61,6 @@ struct RegisterView: View {
                             .frame(height: 40)
                     )
                 SecureField("Password", text: $password)
-                    .frame(width: .infinity)
                     .padding(EdgeInsets(top: 0, leading: 15, bottom: 0, trailing: 0))
                     .background(
                         RoundedRectangle(cornerRadius: 20)
