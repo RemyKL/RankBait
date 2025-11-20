@@ -41,6 +41,47 @@ class UserService: ObservableObject {
         ])
     }
     
+    func leaveGroup(forGroupId groupId: String, forUserId uid: String) async throws{
+        let groupRef = db.collection("groups").document(groupId)
+        
+        try await groupRef.updateData([
+            "members": FieldValue.arrayRemove([uid])
+        ])
+        
+        let userRef = db.collection("users").document(uid)
+        let updatePath = "nicknames.\(groupId)"
+            
+        try await userRef.updateData([
+            updatePath: FieldValue.delete() // This deletes the key-value pair
+        ])
+        
+        
+        print("successfully removed member")
+    }
+    
+    func getGroups(forUserId uid: String) async throws -> [Group] {
+        let groupsCollection = db.collection("groups")
+        
+        // 1. Query for groups where the 'members' array contains the user's ID
+        let query = groupsCollection
+            .whereField("members", arrayContains: uid)
+        
+        do {
+            // 2. Execute the query
+            let snapshot = try await query.getDocuments()
+            
+            // 3. Decode the documents into an array of Group objects
+            let groups = snapshot.documents.compactMap { doc in
+                try? doc.data(as: Group.self)
+            }
+            
+            return groups
+        } catch {
+            print("Error fetching groups for user \(uid): \(error.localizedDescription)")
+            throw error
+        }
+    }
+    
     
     func getuid() -> String? {
         return Auth.auth().currentUser?.uid

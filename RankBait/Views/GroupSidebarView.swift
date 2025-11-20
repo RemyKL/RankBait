@@ -1,4 +1,5 @@
 import SwiftUI
+import FirebaseAuth
 
 struct GroupSidebarView: View {
     @Binding var isPresented: Bool
@@ -7,31 +8,57 @@ struct GroupSidebarView: View {
     @State private var isLoading = true
     @State private var showingJoinGroup = false
     @State private var showingCreateGroup = false
+    @Environment(\.isDarkModeOn) private var isDarkModeOn
     
     var body: some View {
         NavigationStack {
             ZStack {
-                MeshGradient(
-                    width: 3,
-                    height: 3,
-                    points: [
-                        .init(0, 0), .init(0.5, 0), .init(1, 0),
-                        .init(0, 0.5), .init(0.5, 0.5), .init(1, 0.5),
-                        .init(0, 1), .init(0.5, 1), .init(1, 1)
-                    ],
-                    colors: [
-                        Color(red: 0.97, green: 0.94, blue: 1.0),
-                        Color(red: 0.95, green: 0.98, blue: 1.0),
-                        Color(red: 0.98, green: 0.95, blue: 0.98),
-                        Color(red: 0.96, green: 0.93, blue: 1.0),
-                        Color(red: 0.95, green: 0.98, blue: 1.0),
-                        Color(red: 0.97, green: 0.96, blue: 0.99),
-                        Color(red: 0.98, green: 0.94, blue: 0.99),
-                        Color(red: 0.96, green: 0.98, blue: 1.0),
-                        Color(red: 0.97, green: 0.96, blue: 1.0)
-                    ]
-                )
-                .ignoresSafeArea()
+                if isDarkModeOn {
+                    // MARK: - Dark Mode Gradient
+                    MeshGradient(
+                        width: 3, height: 3,
+                        points: [
+                            .init(0, 0), .init(0.5, 0), .init(1, 0),
+                            .init(0, 0.5), .init(0.5, 0.5), .init(1, 0.5),
+                            .init(0, 1), .init(0.5, 1), .init(1, 1)
+                        ],
+                        // Darker, subtler colors
+                        colors: [
+                            Color(red: 0.1, green: 0.1, blue: 0.15),
+                            Color(red: 0.08, green: 0.12, blue: 0.15),
+                            Color(red: 0.15, green: 0.1, blue: 0.12),
+                            Color(red: 0.09, green: 0.08, blue: 0.15),
+                            Color(red: 0.08, green: 0.12, blue: 0.15),
+                            Color(red: 0.12, green: 0.11, blue: 0.14),
+                            Color(red: 0.14, green: 0.09, blue: 0.13),
+                            Color(red: 0.09, green: 0.12, blue: 0.15),
+                            Color(red: 0.11, green: 0.1, blue: 0.14)
+                        ]
+                    )
+                    .ignoresSafeArea()
+                } else {
+                    // MARK: - Light Mode Gradient (Your original colors)
+                    MeshGradient(
+                        width: 3, height: 3,
+                        points: [
+                            .init(0, 0), .init(0.5, 0), .init(1, 0),
+                            .init(0, 0.5), .init(0.5, 0.5), .init(1, 0.5),
+                            .init(0, 1), .init(0.5, 1), .init(1, 1)
+                        ],
+                        colors: [
+                            Color(red: 0.97, green: 0.94, blue: 1.0),
+                            Color(red: 0.95, green: 0.98, blue: 1.0),
+                            Color(red: 0.98, green: 0.95, blue: 0.98),
+                            Color(red: 0.96, green: 0.93, blue: 1.0),
+                            Color(red: 0.95, green: 0.98, blue: 1.0),
+                            Color(red: 0.97, green: 0.96, blue: 0.99),
+                            Color(red: 0.98, green: 0.94, blue: 0.99),
+                            Color(red: 0.96, green: 0.98, blue: 1.0),
+                            Color(red: 0.97, green: 0.96, blue: 1.0)
+                        ]
+                    )
+                    .ignoresSafeArea()
+                }
                 
                 if isLoading {
                     ProgressView("Loading Groups...")
@@ -205,22 +232,31 @@ struct GroupSidebarView: View {
     // MARK: - Load User's Groups
     private func loadUserGroups() {
         isLoading = true
-        let groupIds = UserGroupsManager.shared.userGroupIds
-        
         Task {
-            var groups: [Group] = []
-            
-            for groupId in groupIds {
-                if let group = try? await GroupManager.shared.fetchGroup(byId: groupId) {
-                    groups.append(group)
-                }
-            }
-            
+            let groups = try await UserService.shared.getGroups(forUserId: UserService.shared.getuid() ?? "")
             await MainActor.run {
-                userGroups = groups
+                self.userGroups = groups
                 isLoading = false
             }
         }
+        
+        
+//        let groupIds = UserGroupsManager.shared.userGroupIds
+//        
+//        Task {
+//            var groups: [Group] = []
+//            
+//            for groupId in groupIds {
+//                if let group = try? await GroupManager.shared.fetchGroup(byId: groupId) {
+//                    groups.append(group)
+//                }
+//            }
+//            
+//            await MainActor.run {
+//                userGroups = groups
+//                isLoading = false
+//            }
+//        }
     }
     
     // MARK: - Select Group

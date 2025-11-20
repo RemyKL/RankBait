@@ -5,30 +5,56 @@ struct GroupSelectionView: View {
     @State private var showingCreateGroup = false
     @State private var showingJoinGroup = false
     @State private var errorMessage: String?
+    @Environment(\.isDarkModeOn) private var isDarkModeOn
     
     var body: some View {
         ZStack {
-            MeshGradient(
-                width: 3,
-                height: 3,
-                points: [
-                    .init(0, 0), .init(0.5, 0), .init(1, 0),
-                    .init(0, 0.5), .init(0.5, 0.5), .init(1, 0.5),
-                    .init(0, 1), .init(0.5, 1), .init(1, 1)
-                ],
-                colors: [
-                    Color(red: 0.97, green: 0.94, blue: 1.0),
-                    Color(red: 0.95, green: 0.98, blue: 1.0),
-                    Color(red: 0.98, green: 0.95, blue: 0.98),
-                    Color(red: 0.96, green: 0.93, blue: 1.0),
-                    Color(red: 0.95, green: 0.98, blue: 1.0),
-                    Color(red: 0.97, green: 0.96, blue: 0.99),
-                    Color(red: 0.98, green: 0.94, blue: 0.99),
-                    Color(red: 0.96, green: 0.98, blue: 1.0),
-                    Color(red: 0.97, green: 0.96, blue: 1.0)
-                ]
-            )
-            .ignoresSafeArea()
+            if isDarkModeOn {
+                // MARK: - Dark Mode Gradient
+                MeshGradient(
+                    width: 3, height: 3,
+                    points: [
+                        .init(0, 0), .init(0.5, 0), .init(1, 0),
+                        .init(0, 0.5), .init(0.5, 0.5), .init(1, 0.5),
+                        .init(0, 1), .init(0.5, 1), .init(1, 1)
+                    ],
+                    // Darker, subtler colors
+                    colors: [
+                        Color(red: 0.1, green: 0.1, blue: 0.15),
+                        Color(red: 0.08, green: 0.12, blue: 0.15),
+                        Color(red: 0.15, green: 0.1, blue: 0.12),
+                        Color(red: 0.09, green: 0.08, blue: 0.15),
+                        Color(red: 0.08, green: 0.12, blue: 0.15),
+                        Color(red: 0.12, green: 0.11, blue: 0.14),
+                        Color(red: 0.14, green: 0.09, blue: 0.13),
+                        Color(red: 0.09, green: 0.12, blue: 0.15),
+                        Color(red: 0.11, green: 0.1, blue: 0.14)
+                    ]
+                )
+                .ignoresSafeArea()
+            } else {
+                // MARK: - Light Mode Gradient (Your original colors)
+                MeshGradient(
+                    width: 3, height: 3,
+                    points: [
+                        .init(0, 0), .init(0.5, 0), .init(1, 0),
+                        .init(0, 0.5), .init(0.5, 0.5), .init(1, 0.5),
+                        .init(0, 1), .init(0.5, 1), .init(1, 1)
+                    ],
+                    colors: [
+                        Color(red: 0.97, green: 0.94, blue: 1.0),
+                        Color(red: 0.95, green: 0.98, blue: 1.0),
+                        Color(red: 0.98, green: 0.95, blue: 0.98),
+                        Color(red: 0.96, green: 0.93, blue: 1.0),
+                        Color(red: 0.95, green: 0.98, blue: 1.0),
+                        Color(red: 0.97, green: 0.96, blue: 0.99),
+                        Color(red: 0.98, green: 0.94, blue: 0.99),
+                        Color(red: 0.96, green: 0.98, blue: 1.0),
+                        Color(red: 0.97, green: 0.96, blue: 1.0)
+                    ]
+                )
+                .ignoresSafeArea()
+            }
             
             if let group = selectedGroup {
                 ContentView(currentGroup: $selectedGroup)
@@ -143,14 +169,34 @@ struct GroupSelectionView: View {
     }
     
     private func loadSelectedGroup() {
-        if let groupId = UserGroupsManager.shared.selectedGroupId {
-            Task {
-                if let group = try? await GroupManager.shared.fetchGroup(byId: groupId) {
-                    await MainActor.run {
-                        selectedGroup = group
+//        if let groupId = UserGroupsManager.shared.selectedGroupId {
+//            Task {
+//                if let group = try? await GroupManager.shared.fetchGroup(byId: groupId) {
+//                    await MainActor.run {
+//                        selectedGroup = group
+//                    }
+//                }
+//            }
+//        }
+        Task {
+            let userId = UserService.shared.getuid() ?? ""
+                do {
+                    // 1. Get all remaining groups
+                    let remainingGroups = try await UserService.shared.getGroups(forUserId: userId)
+                    
+                    // 2. Determine the next selected group
+                    if let firstGroup = remainingGroups.first {
+                        // Select the first remaining group
+                        selectedGroup = firstGroup
+                    } else {
+                        // User is in no groups, set to blank
+                        selectedGroup = nil
                     }
+                } catch {
+                    print("Failed to update selected group after leaving: \(error)")
+                    // On error, perhaps default to nil to force group selection screen
+                    selectedGroup = nil
                 }
-            }
         }
     }
     

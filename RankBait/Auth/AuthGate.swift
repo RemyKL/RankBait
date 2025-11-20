@@ -14,9 +14,13 @@ struct AuthGate: View {
         if auth.loading {
             ProgressView()
         } else if auth.user == nil {
-            LoginView()
+            LoginView().preferredColorScheme(.light)
         } else {
             GroupSelectionView()   // your real app (tab bar, home screen, etc.)
         }
     }
+}
+
+#Preview {
+    AuthGate()
 }
